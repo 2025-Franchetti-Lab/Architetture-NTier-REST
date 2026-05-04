@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proxy, Gateway & Load Balancer — Informatica 5ª</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f2eb;
+    --surface: #ffffff;
+    --surface-2: #f0ece2;
+    --border: #ddd8cc;
+    --text: #1a1714;
+    --text-muted: #6b6458;
+    --accent-proxy: #2563a8;
+    --accent-gateway: #7c3aad;
+    --accent-lb: #0f7a5a;
+    --accent-warn: #b45309;
+    --accent-proxy-light: #dbeafe;
+    --accent-gateway-light: #ede9fe;
+    --accent-lb-light: #d1fae5;
+    --accent-warn-light: #fef3c7;
+    --rule: #c8c0b0;
+    --tag-bg: #e8e2d8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 16px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--text);
+    color: #f5f2eb;
+    padding: 3.5rem 4rem 3rem;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 320px; height: 320px;
+    border: 40px solid rgba(255,255,255,.06);
+    border-radius: 50%;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    right: 60px; bottom: -80px;
+    width: 200px; height: 200px;
+    border: 30px solid rgba(255,255,255,.04);
+    border-radius: 50%;
+  }
+  .header-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: rgba(245,242,235,.5);
+    margin-bottom: .75rem;
+  }
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 400;
+    line-height: 1.15;
+    max-width: 680px;
+  }
+  header h1 em {
+    font-style: italic;
+    color: rgba(245,242,235,.65);
+  }
+  .header-meta {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 2rem;
+    font-size: .82rem;
+    color: rgba(245,242,235,.55);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: .05em;
+  }
+
+  /* ── NAV / TOC ── */
+  nav.toc {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 4rem;
+    display: flex;
+    gap: 0;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  nav.toc a {
+    font-size: .78rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: .3rem .9rem;
+    border-right: 1px solid var(--border);
+    letter-spacing: .04em;
+    transition: color .2s;
+  }
+  nav.toc a:first-child { padding-left: 0; }
+  nav.toc a:last-child { border-right: none; }
+  nav.toc a:hover { color: var(--text); }
+
+  /* ── LAYOUT ── */
+  .wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 3rem 2rem 6rem;
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    margin-bottom: 4rem;
+  }
+  section + section {
+    border-top: 1px solid var(--rule);
+    padding-top: 3.5rem;
+  }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: .68rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: .5rem;
+  }
+
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    font-weight: 400;
+    line-height: 1.2;
+    margin-bottom: 1.25rem;
+  }
+  h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.35rem;
+    font-weight: 400;
+    margin: 2rem 0 .75rem;
+  }
+  h4 {
+    font-size: .85rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin: 1.5rem 0 .5rem;
+    color: var(--text-muted);
+  }
+
+  p { margin-bottom: 1rem; color: var(--text); }
+  p:last-child { margin-bottom: 0; }
+
+  /* ── CARD COMPONENTI ── */
+  .component-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 2rem 2rem 1.75rem;
+    margin: 2rem 0;
+    position: relative;
+  }
+  .component-card .card-accent {
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    border-radius: 2px 0 0 2px;
+  }
+  .card-proxy .card-accent { background: var(--accent-proxy); }
+  .card-gateway .card-accent { background: var(--accent-gateway); }
+  .card-lb .card-accent { background: var(--accent-lb); }
+
+  .component-card h2 {
+    font-size: 1.6rem;
+    margin-bottom: .25rem;
+  }
+  .card-badge {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: .65rem;
+    font-weight: 500;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    padding: .2rem .6rem;
+    border-radius: 2px;
+    margin-bottom: 1.25rem;
+  }
+  .card-proxy .card-badge { background: var(--accent-proxy-light); color: var(--accent-proxy); }
+  .card-gateway .card-badge { background: var(--accent-gateway-light); color: var(--accent-gateway); }
+  .card-lb .card-badge { background: var(--accent-lb-light); color: var(--accent-lb); }
+
+  /* ── DIAGRAMMI SVG ── */
+  .diagram-svg {
+    background: #1a1714;
+    border-radius: 4px;
+    margin: 1.5rem 0;
+    padding: 1.5rem 1.25rem;
+    overflow-x: auto;
+  }
+  .diagram-svg svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* ── LISTA CARATTERISTICHE ── */
+  .feat-list {
+    list-style: none;
+    margin: 1rem 0;
+  }
+  .feat-list li {
+    padding: .45rem 0 .45rem 1.5rem;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+    font-size: .94rem;
+  }
+  .feat-list li:last-child { border-bottom: none; }
+  .feat-list li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    font-family: 'DM Mono', monospace;
+    font-size: .8rem;
+    color: var(--text-muted);
+  }
+  .feat-list.proxy li::before { color: var(--accent-proxy); }
+  .feat-list.gateway li::before { color: var(--accent-gateway); }
+  .feat-list.lb li::before { color: var(--accent-lb); }
+
+  /* ── QUANDO USARE / EVITARE ── */
+  .use-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1.25rem 0;
+  }
+  @media(max-width: 600px) { .use-grid { grid-template-columns: 1fr; } }
+
+  .use-box {
+    padding: 1.25rem 1.5rem;
+    border-radius: 2px;
+    font-size: .9rem;
+  }
+  .use-box h4 {
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    margin: 0 0 .75rem;
+    color: inherit;
+  }
+  .use-box ul { list-style: none; }
+  .use-box ul li {
+    padding: .25rem 0 .25rem 1.4rem;
+    position: relative;
+    font-size: .87rem;
+  }
+  .use-box ul li::before {
+    position: absolute; left: 0;
+    font-family: 'DM Mono', monospace;
+    font-size: .8rem;
+  }
+
+  .use-yes { background: var(--accent-lb-light); color: #064e3b; }
+  .use-yes h4 { color: var(--accent-lb); }
+  .use-yes li::before { content: '✓'; color: var(--accent-lb); }
+
+  .use-no { background: #fef2f2; color: #7f1d1d; }
+  .use-no h4 { color: #dc2626; }
+  .use-no li::before { content: '✗'; color: #dc2626; }
+
+  /* ── TABELLA COMPARATIVA ── */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .875rem;
+    margin: 2rem 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  .compare-table thead tr {
+    background: var(--text);
+    color: #f5f2eb;
+  }
+  .compare-table th {
+    padding: .85rem 1.25rem;
+    text-align: left;
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .compare-table th:first-child { color: rgba(245,242,235,.5); }
+  .compare-table td {
+    padding: .8rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:nth-child(even) td { background: var(--surface-2); }
+  .compare-table td:first-child {
+    font-weight: 500;
+    font-size: .82rem;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: .04em;
+    white-space: nowrap;
+  }
+  .tag {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: .65rem;
+    padding: .15rem .5rem;
+    border-radius: 2px;
+    letter-spacing: .08em;
+    font-weight: 500;
+  }
+  .tag-proxy { background: var(--accent-proxy-light); color: var(--accent-proxy); }
+  .tag-gateway { background: var(--accent-gateway-light); color: var(--accent-gateway); }
+  .tag-lb { background: var(--accent-lb-light); color: var(--accent-lb); }
+
+  /* ── CALLOUT ── */
+  .callout {
+    padding: 1.25rem 1.5rem;
+    border-left: 3px solid;
+    border-radius: 0 2px 2px 0;
+    margin: 1.5rem 0;
+    font-size: .9rem;
+  }
+  .callout-info { background: var(--accent-proxy-light); border-color: var(--accent-proxy); }
+  .callout-warn { background: var(--accent-warn-light); border-color: var(--accent-warn); color: #78350f; }
+  .callout strong { font-weight: 600; }
+
+  /* ── CODICE ── */
+  code {
+    font-family: 'DM Mono', monospace;
+    font-size: .82em;
+    background: var(--tag-bg);
+    padding: .1em .35em;
+    border-radius: 2px;
+    color: var(--text);
+  }
+
+  /* ── SCENARIO BOX ── */
+  .scenario-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .scenario-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.25rem;
+    border-radius: 2px;
+  }
+  .scenario-box .s-icon {
+    font-size: 1.4rem;
+    margin-bottom: .5rem;
+    display: block;
+  }
+  .scenario-box h4 {
+    margin: 0 0 .5rem;
+    font-size: .78rem;
+    color: var(--text);
+  }
+  .scenario-box p { font-size: .85rem; color: var(--text-muted); margin: 0; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--text);
+    color: rgba(245,242,235,.4);
+    text-align: center;
+    padding: 2rem;
+    font-family: 'DM Mono', monospace;
+    font-size: .72rem;
+    letter-spacing: .1em;
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    header { background: #1a1714 !important; -webkit-print-color-adjust: exact; }
+    .diagram-svg { background: #1a1714 !important; -webkit-print-color-adjust: exact; }
+    nav.toc { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════ HEADER -->
+<header>
+  <div class="header-tag">Informatica · Classe 5ª · Reti e Architetture</div>
+  <h1>Proxy, Gateway<br><em>& Load Balancer</em></h1>
+  <div class="header-meta">
+    <span>Architetture per servizi REST</span>
+    <span>//</span>
+    <span>Anno scolastico 2025–26</span>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════ TOC -->
+<nav class="toc">
+  <a href="#intro">Introduzione</a>
+  <a href="#proxy">Proxy</a>
+  <a href="#gateway">API Gateway</a>
+  <a href="#lb">Load Balancer</a>
+  <a href="#confronto">Confronto</a>
+  <a href="#scenari">Scenari reali</a>
+  <a href="#sommario">Sommario</a>
+</nav>
+
+<div class="wrapper">
+
+  <!-- ══════════════════════════════════════════ INTRODUZIONE -->
+  <section id="intro">
+    <div class="section-label">// 00 — Contesto</div>
+    <h2>Perché esistono questi componenti?</h2>
+
+    <p>Quando un'applicazione client vuole comunicare con uno o più server REST, raramente lo fa in modo diretto. Tra il client e il server si interpone spesso uno o più componenti di <strong>intermediazione</strong> che svolgono funzioni cruciali: sicurezza, ottimizzazione, bilanciamento del carico, instradamento intelligente.</p>
+
+    <p>In questa unità didattica analizziamo tre componenti fondamentali di questo ecosistema: il <strong>Proxy</strong>, l'<strong>API Gateway</strong> e il <strong>Load Balancer</strong>. Pur avendo funzioni simili in superficie, rispondono a esigenze molto diverse e spesso convivono nella stessa architettura.</p>
+
+    <div class="diagram-svg">
+      <svg viewBox="0 0 780 210" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+        <defs>
+          <marker id="arr0" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+            <polygon points="0 0, 8 3.5, 0 7" fill="#6b6458"/>
+          </marker>
+          <marker id="arr-chain" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+            <polygon points="0 0, 8 3.5, 0 7" fill="#94a3b8"/>
+          </marker>
+        </defs>
+
+        <!-- ROW 1: comunicazione diretta -->
+        <text x="12" y="22" font-family="DM Mono,monospace" font-size="10" fill="#94a3b8" letter-spacing="1">SENZA INTERMEDIARI</text>
+
+        <!-- Client box -->
+        <rect x="12" y="34" width="100" height="36" rx="3" fill="none" stroke="#f9fafb" stroke-width="1.5"/>
+        <text x="62" y="57" font-family="DM Mono,monospace" font-size="12" fill="#f9fafb" text-anchor="middle" font-weight="500">CLIENT</text>
+
+        <!-- arrow -->
+        <line x1="114" y1="52" x2="656" y2="52" stroke="#6b6458" stroke-width="1.5" marker-end="url(#arr0)" stroke-dasharray="5,3"/>
+        <text x="384" y="44" font-family="DM Mono,monospace" font-size="9.5" fill="#6b6458" text-anchor="middle">GET /api/prodotti  —  nessun controllo, nessuna ottimizzazione</text>
+
+        <!-- Server box -->
+        <rect x="658" y="34" width="110" height="36" rx="3" fill="none" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="713" y="57" font-family="DM Mono,monospace" font-size="12" fill="#fbbf24" text-anchor="middle" font-weight="500">SERVER REST</text>
+
+        <!-- divider -->
+        <line x1="12" y1="90" x2="768" y2="90" stroke="#2d2926" stroke-width="1"/>
+
+        <!-- ROW 2: architettura stratificata -->
+        <text x="12" y="108" font-family="DM Mono,monospace" font-size="10" fill="#94a3b8" letter-spacing="1">CON ARCHITETTURA STRATIFICATA</text>
+
+        <!-- Client -->
+        <rect x="12" y="120" width="80" height="36" rx="3" fill="none" stroke="#f9fafb" stroke-width="1.5"/>
+        <text x="52" y="143" font-family="DM Mono,monospace" font-size="11" fill="#f9fafb" text-anchor="middle" font-weight="500">CLIENT</text>
+
+        <!-- arrow -->
+        <line x1="94" y1="138" x2="128" y2="138" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-chain)"/>
+
+        <!-- Proxy box -->
+        <rect x="130" y="120" width="100" height="36" rx="3" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.5"/>
+        <text x="180" y="140" font-family="DM Mono,monospace" font-size="11" fill="#60a5fa" text-anchor="middle" font-weight="500">PROXY</text>
+
+        <!-- arrow -->
+        <line x1="232" y1="138" x2="266" y2="138" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-chain)"/>
+
+        <!-- Gateway box -->
+        <rect x="268" y="120" width="130" height="36" rx="3" fill="#2d1f4e" stroke="#c084fc" stroke-width="1.5"/>
+        <text x="333" y="140" font-family="DM Mono,monospace" font-size="11" fill="#c084fc" text-anchor="middle" font-weight="500">API GATEWAY</text>
+
+        <!-- arrow -->
+        <line x1="400" y1="138" x2="434" y2="138" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-chain)"/>
+
+        <!-- LB box -->
+        <rect x="436" y="120" width="150" height="36" rx="3" fill="#0d3326" stroke="#34d399" stroke-width="1.5"/>
+        <text x="511" y="140" font-family="DM Mono,monospace" font-size="11" fill="#34d399" text-anchor="middle" font-weight="500">LOAD BALANCER</text>
+
+        <!-- arrow -->
+        <line x1="588" y1="138" x2="622" y2="138" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-chain)"/>
+
+        <!-- Server box -->
+        <rect x="624" y="120" width="120" height="36" rx="3" fill="none" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="684" y="140" font-family="DM Mono,monospace" font-size="11" fill="#fbbf24" text-anchor="middle" font-weight="500">SERVER REST</text>
+
+        <!-- labels below -->
+        <text x="180" y="172" font-family="DM Mono,monospace" font-size="8.5" fill="#60a5fa" text-anchor="middle">cache · SSL · filtro</text>
+        <text x="333" y="172" font-family="DM Mono,monospace" font-size="8.5" fill="#c084fc" text-anchor="middle">authn · rate limit · routing</text>
+        <text x="511" y="172" font-family="DM Mono,monospace" font-size="8.5" fill="#34d399" text-anchor="middle">distribuzione · HA · health check</text>
+
+        <!-- return arrow -->
+        <path d="M624 162 Q390 195 94 162" fill="none" stroke="#6b6458" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr0)"/>
+        <text x="384" y="205" font-family="DM Mono,monospace" font-size="9" fill="#6b6458" text-anchor="middle">risposta HTTP percorre il tragitto inverso</text>
+      </svg>
+    </div>
+
+    <div class="callout callout-info">
+      <strong>Nota metodologica:</strong> nella pratica non è sempre necessario avere tutti e tre i componenti. La scelta dipende dalle esigenze del progetto: dimensione del traffico, sicurezza richiesta, numero di servizi backend.
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════ PROXY -->
+  <section id="proxy">
+    <div class="section-label">// 01 — Primo componente</div>
+
+    <div class="component-card card-proxy">
+      <div class="card-accent"></div>
+      <div class="card-badge">Proxy</div>
+      <h2>Il Proxy</h2>
+      <p>Il termine <em>proxy</em> viene dall'inglese e significa "delegato" o "intermediario". In ambito informatico è un server che si frappone tra il client e il server di destinazione, <strong>agendo per conto del client</strong>. Il client non conosce (e spesso non si preoccupa di) chi è il destinatario finale della richiesta.</p>
+    </div>
+
+    <h3>Come funziona un Proxy in un contesto REST</h3>
+    <p>Il client invia una richiesta HTTP/HTTPS al proxy. Il proxy la riceve, può ispezionarla, modificarla, filtrarla, e poi la inoltra al server REST. La risposta percorre il tragitto inverso.</p>
+
+    <div class="diagram-svg">
+      <svg viewBox="0 0 720 370" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+        <defs>
+          <marker id="arr-p" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+            <polygon points="0 0, 8 3.5, 0 7" fill="#94a3b8"/>
+          </marker>
+          <marker id="arr-pr" markerWidth="8" markerHeight="8" refX="1" refY="3.5" orient="auto">
+            <polygon points="8 0, 0 3.5, 8 7" fill="#94a3b8"/>
+          </marker>
+          <marker id="arr-ret" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+            <polygon points="0 0, 8 3.5, 0 7" fill="#6b6458"/>
+          </marker>
+        </defs>
+
+        <!-- CLIENT -->
+        <rect x="20" y="20" width="130" height="50" rx="4" fill="none" stroke="#f9fafb" stroke-width="2"/>
+        <text x="85" y="42" font-family="DM Mono,monospace" font-size="13" fill="#f9fafb" text-anchor="middle" font-weight="600">BROWSER</text>
+        <text x="85" y="58" font-family="DM Mono,monospace" font-size="10" fill="#9ca3af" text-anchor="middle">/ App client</text>
+
+        <!-- arrow down: request -->
+        <line x1="85" y1="72" x2="85" y2="118" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-p)"/>
+        <text x="92" y="98" font-family="DM Mono,monospace" font-size="9.5" fill="#94a3b8">GET /api/prodotti</text>
+
+        <!-- PROXY BOX -->
+        <rect x="20" y="120" width="260" height="160" rx="4" fill="#0f2340" stroke="#60a5fa" stroke-width="2"/>
+        <rect x="20" y="120" width="260" height="28" rx="4" fill="#1e3a5f"/>
+        <rect x="20" y="140" width="260" height="8" fill="#1e3a5f"/>
+        <text x="150" y="139" font-family="DM Mono,monospace" font-size="12" fill="#60a5fa" text-anchor="middle" font-weight="700" letter-spacing="1">PROXY SERVER</text>
+
+        <!-- steps inside proxy -->
+        <text x="38" y="168" font-family="DM Mono,monospace" font-size="11" fill="#93c5fd">① Cache hit?</text>
+        <text x="55" y="183" font-family="DM Mono,monospace" font-size="10" fill="#6b6458">→ sì: risposta immediata al client</text>
+        <text x="55" y="196" font-family="DM Mono,monospace" font-size="10" fill="#6b6458">→ no: procede al passo successivo</text>
+
+        <line x1="38" y1="203" x2="265" y2="203" stroke="#1e3a5f" stroke-width="1"/>
+
+        <text x="38" y="218" font-family="DM Mono,monospace" font-size="11" fill="#93c5fd">② Filtra header / IP</text>
+        <text x="38" y="232" font-family="DM Mono,monospace" font-size="11" fill="#93c5fd">③ Comprime risposta (gzip)</text>
+        <text x="38" y="246" font-family="DM Mono,monospace" font-size="11" fill="#93c5fd">④ Logga la richiesta</text>
+        <text x="38" y="260" font-family="DM Mono,monospace" font-size="11" fill="#93c5fd">⑤ Inoltra al server →</text>
+
+        <!-- arrow down: forwarded request -->
+        <line x1="150" y1="282" x2="150" y2="318" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-p)"/>
+        <text x="158" y="304" font-family="DM Mono,monospace" font-size="9.5" fill="#94a3b8">GET /api/prodotti  (inoltrata)</text>
+
+        <!-- SERVER REST -->
+        <rect x="20" y="320" width="130" height="40" rx="4" fill="none" stroke="#fbbf24" stroke-width="2"/>
+        <text x="85" y="345" font-family="DM Mono,monospace" font-size="12" fill="#fbbf24" text-anchor="middle" font-weight="600">SERVER REST</text>
+
+        <!-- ─── RETURN PATH ─── -->
+        <!-- arrow right from server to right column -->
+        <line x1="152" y1="340" x2="450" y2="340" stroke="#6b6458" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-ret)"/>
+        <text x="300" y="333" font-family="DM Mono,monospace" font-size="9.5" fill="#6b6458" text-anchor="middle">200 OK  { data: [...] }</text>
+
+        <!-- right column: return path box -->
+        <rect x="450" y="310" width="240" height="60" rx="4" fill="#0f2340" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <text x="570" y="333" font-family="DM Mono,monospace" font-size="10" fill="#60a5fa" text-anchor="middle" font-weight="600">PROXY  (risposta di ritorno)</text>
+        <text x="570" y="349" font-family="DM Mono,monospace" font-size="9.5" fill="#6b6458" text-anchor="middle">salva in cache · decomprime · aggiunge header</text>
+        <text x="570" y="362" font-family="DM Mono,monospace" font-size="9.5" fill="#6b6458" text-anchor="middle">→ risposta al client</text>
+
+        <!-- arrow up to client on the right -->
+        <line x1="570" y1="308" x2="570" y2="80" stroke="#6b6458" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-ret)"/>
+
+        <!-- CLIENT box on the right (ghost) -->
+        <rect x="505" y="20" width="130" height="50" rx="4" fill="none" stroke="#f9fafb" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="570" y="42" font-family="DM Mono,monospace" font-size="11" fill="#6b7280" text-anchor="middle">BROWSER</text>
+        <text x="570" y="57" font-family="DM Mono,monospace" font-size="9" fill="#6b7280" text-anchor="middle">(riceve risposta)</text>
+
+        <!-- legend -->
+        <line x1="450" y1="145" x2="480" y2="145" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="485" y="149" font-family="DM Mono,monospace" font-size="9" fill="#94a3b8">richiesta →</text>
+        <line x1="450" y1="162" x2="480" y2="162" stroke="#6b6458" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <text x="485" y="166" font-family="DM Mono,monospace" font-size="9" fill="#6b6458">risposta ←</text>
+      </svg>
+    </div>
+
+    <h3>Tipologie principali</h3>
+
+    <h4>Proxy Forward (Forward Proxy)</h4>
+    <p>È il tipo più comune nelle reti aziendali. Il client lo configura esplicitamente: ogni richiesta verso l'esterno passa attraverso di esso. Nasconde l'identità del client verso il server.</p>
+
+    <h4>Proxy Reverse (Reverse Proxy)</h4>
+    <p>È il più usato nelle architetture REST. Il client non sa dell'esistenza del proxy: vede solo un indirizzo IP pubblico. Il reverse proxy smista le richieste verso uno o più server interni. <strong>È il tipo più rilevante per le applicazioni web moderne.</strong></p>
+
+    <h3>Caratteristiche principali</h3>
+    <ul class="feat-list proxy">
+      <li><strong>Caching:</strong> memorizza le risposte per richieste identiche, riducendo il carico sui server REST e migliorando i tempi di risposta.</li>
+      <li><strong>Anonimizzazione:</strong> nasconde l'indirizzo IP del client (forward proxy) o del server (reverse proxy).</li>
+      <li><strong>Filtraggio dei contenuti:</strong> può bloccare richieste verso domini non autorizzati o con payload sospetti.</li>
+      <li><strong>Compressione:</strong> può comprimere le risposte (gzip, br) prima di inviarle al client, riducendo il traffico di rete.</li>
+      <li><strong>SSL Termination:</strong> gestisce la crittografia HTTPS, sollevando i server backend da questo compito computazionalmente costoso.</li>
+      <li><strong>Logging e monitoraggio:</strong> registra tutto il traffico in transito per analisi e audit.</li>
+    </ul>
+
+    <div class="use-grid">
+      <div class="use-box use-yes">
+        <h4>Quando usarlo ✓</h4>
+        <ul>
+          <li>Serve caching aggressivo per API con dati che cambiano poco</li>
+          <li>Si vuole nascondere la topologia interna della rete</li>
+          <li>È necessario terminare SSL centralmente</li>
+          <li>Si vuole loggare tutto il traffico HTTP</li>
+          <li>Accesso controllato a risorse esterne dalla rete aziendale</li>
+        </ul>
+      </div>
+      <div class="use-box use-no">
+        <h4>Quando evitarlo ✗</h4>
+        <ul>
+          <li>Si ha bisogno di logica di routing complessa tra microservizi</li>
+          <li>Serve autenticazione e autorizzazione granulare per API</li>
+          <li>Il traffico è già end-to-end crittografato con mutual TLS</li>
+          <li>Si gestiscono richieste con stato (WebSocket, SSE) e il proxy non le supporta</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout-warn">
+      <strong>Attenzione:</strong> un proxy mal configurato può diventare un collo di bottiglia o un single point of failure. È fondamentale dimensionarlo correttamente e prevedere ridondanza.
+    </div>
+
+    <p>Strumenti comuni: <code>Nginx</code>, <code>HAProxy</code>, <code>Squid</code>, <code>Varnish</code> (orientato al caching).</p>
+  </section>
+
+  <!-- ══════════════════════════════════════════ GATEWAY -->
+  <section id="gateway">
+    <div class="section-label">// 02 — Secondo componente</div>
+
+    <div class="component-card card-gateway">
+      <div class="card-accent"></div>
+      <div class="card-badge">API Gateway</div>
+      <h2>L'API Gateway</h2>
+      <p>L'API Gateway è un componente specializzato nella gestione del traffico verso le API. A differenza del proxy generico, <strong>conosce la semantica delle API</strong> e può prendere decisioni sofisticate basate sul contenuto delle richieste: l'endpoint chiamato, il token JWT allegato, la versione dell'API, la quota residua del client.</p>
+    </div>
+
+    <h3>Ruolo nelle architetture a microservizi</h3>
+    <p>In un'architettura a microservizi, ogni servizio espone la propria API REST. Senza un gateway, il client dovrebbe conoscere l'indirizzo e la porta di ogni singolo servizio. Il gateway funge da <strong>punto di ingresso unico</strong> (<em>single entry point</em>): il client parla solo col gateway, che instrada la richiesta al microservizio corretto.</p>
+
+    <div class="diagram-svg">
+      <svg viewBox="0 0 760 380" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+        <defs>
+          <marker id="arr-g" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+            <polygon points="0 0, 8 3.5, 0 7" fill="#94a3b8"/>
+          </marker>
+          <marker id="arr-g2" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+            <polygon points="0 0, 8 3.5, 0 7" fill="#6b6458"/>
+          </marker>
+        </defs>
+
+        <!-- THREE CLIENTS -->
+        <rect x="20" y="16" width="120" height="40" rx="3" fill="none" stroke="#f9fafb" stroke-width="1.5"/>
+        <text x="80" y="32" font-family="DM Mono,monospace" font-size="10" fill="#f9fafb" text-anchor="middle" font-weight="600">CLIENT MOBILE</text>
+        <text x="80" y="47" font-family="DM Mono,monospace" font-size="9" fill="#9ca3af" text-anchor="middle">iOS / Android</text>
+
+        <rect x="300" y="16" width="120" height="40" rx="3" fill="none" stroke="#f9fafb" stroke-width="1.5"/>
+        <text x="360" y="32" font-family="DM Mono,monospace" font-size="10" fill="#f9fafb" text-anchor="middle" font-weight="600">CLIENT WEB</text>
+        <text x="360" y="47" font-family="DM Mono,monospace" font-size="9" fill="#9ca3af" text-anchor="middle">Browser SPA</text>
+
+        <rect x="580" y="16" width="120" height="40" rx="3" fill="none" stroke="#f9fafb" stroke-width="1.5"/>
+        <text x="640" y="32" font-family="DM Mono,monospace" font-size="10" fill="#f9fafb" text-anchor="middle" font-weight="600">CLIENT IoT</text>
+        <text x="640" y="47" font-family="DM Mono,monospace" font-size="9" fill="#9ca3af" text-anchor="middle">Dispositivo Edge</text>
+
+        <!-- lines converging to gateway -->
+        <line x1="80" y1="56" x2="360" y2="108" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-g)"/>
+        <line x1="360" y1="56" x2="360" y2="108" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-g)"/>
+        <line x1="640" y1="56" x2="360" y2="108" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-g)"/>
+
+        <!-- GATEWAY BOX -->
+        <rect x="160" y="110" width="400" height="180" rx="5" fill="#1a0d33" stroke="#c084fc" stroke-width="2.5"/>
+        <rect x="160" y="110" width="400" height="32" rx="5" fill="#2d1f4e"/>
+        <rect x="160" y="132" width="400" height="10" fill="#2d1f4e"/>
+        <text x="360" y="131" font-family="DM Mono,monospace" font-size="13" fill="#c084fc" text-anchor="middle" font-weight="700" letter-spacing="2">API  GATEWAY</text>
+
+        <!-- steps inside -->
+        <text x="185" y="162" font-family="DM Mono,monospace" font-size="11" fill="#d8b4fe">① Autenticazione</text>
+        <text x="390" y="162" font-family="DM Mono,monospace" font-size="10" fill="#6b6458">JWT / OAuth2 / API Key</text>
+
+        <line x1="185" y1="170" x2="545" y2="170" stroke="#2d1f4e" stroke-width="1"/>
+
+        <text x="185" y="186" font-family="DM Mono,monospace" font-size="11" fill="#d8b4fe">② Rate Limiting</text>
+        <text x="390" y="186" font-family="DM Mono,monospace" font-size="10" fill="#6b6458">100 req/min per API key</text>
+
+        <line x1="185" y1="194" x2="545" y2="194" stroke="#2d1f4e" stroke-width="1"/>
+
+        <text x="185" y="210" font-family="DM Mono,monospace" font-size="11" fill="#d8b4fe">③ Routing semantico</text>
+        <text x="390" y="210" font-family="DM Mono,monospace" font-size="10" fill="#6b6458">/utenti → svc-utenti</text>
+        <text x="390" y="222" font-family="DM Mono,monospace" font-size="10" fill="#6b6458">/ordini → svc-ordini</text>
+
+        <line x1="185" y1="228" x2="545" y2="228" stroke="#2d1f4e" stroke-width="1"/>
+
+        <text x="185" y="244" font-family="DM Mono,monospace" font-size="11" fill="#d8b4fe">④ Versioning</text>
+        <text x="390" y="244" font-family="DM Mono,monospace" font-size="10" fill="#6b6458">/v1/... → backend v1</text>
+
+        <line x1="185" y1="252" x2="545" y2="252" stroke="#2d1f4e" stroke-width="1"/>
+
+        <text x="185" y="268" font-family="DM Mono,monospace" font-size="11" fill="#d8b4fe">⑤ Circuit Breaker</text>
+        <text x="390" y="268" font-family="DM Mono,monospace" font-size="10" fill="#6b6458">stop se svc non risponde</text>
+
+        <!-- THREE output arrows to microservices -->
+        <line x1="220" y1="292" x2="100" y2="330" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-g)"/>
+        <line x1="360" y1="292" x2="360" y2="330" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-g)"/>
+        <line x1="500" y1="292" x2="620" y2="330" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-g)"/>
+
+        <!-- labels on arrows -->
+        <text x="130" y="322" font-family="DM Mono,monospace" font-size="8.5" fill="#94a3b8" text-anchor="middle">/utenti/*</text>
+        <text x="360" y="322" font-family="DM Mono,monospace" font-size="8.5" fill="#94a3b8" text-anchor="middle">/ordini/*</text>
+        <text x="590" y="322" font-family="DM Mono,monospace" font-size="8.5" fill="#94a3b8" text-anchor="middle">/pagamenti/*</text>
+
+        <!-- THREE microservice boxes -->
+        <rect x="30" y="332" width="140" height="38" rx="3" fill="#111827" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="100" y="348" font-family="DM Mono,monospace" font-size="10" fill="#fbbf24" text-anchor="middle" font-weight="600">svc-utenti</text>
+        <text x="100" y="361" font-family="DM Mono,monospace" font-size="9" fill="#6b6458" text-anchor="middle">:8081  REST</text>
+
+        <rect x="280" y="332" width="160" height="38" rx="3" fill="#111827" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="360" y="348" font-family="DM Mono,monospace" font-size="10" fill="#fbbf24" text-anchor="middle" font-weight="600">svc-ordini</text>
+        <text x="360" y="361" font-family="DM Mono,monospace" font-size="9" fill="#6b6458" text-anchor="middle">:8082  REST</text>
+
+        <rect x="550" y="332" width="170" height="38" rx="3" fill="#111827" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="635" y="348" font-family="DM Mono,monospace" font-size="10" fill="#fbbf24" text-anchor="middle" font-weight="600">svc-pagamenti</text>
+        <text x="635" y="361" font-family="DM Mono,monospace" font-size="9" fill="#6b6458" text-anchor="middle">:8083  REST</text>
+      </svg>
+    </div>
+
+    <h3>Caratteristiche principali</h3>
+    <ul class="feat-list gateway">
+      <li><strong>Autenticazione e Autorizzazione:</strong> verifica token JWT, chiavi API, sessioni OAuth2. Il client viene autenticato una sola volta al gateway; i servizi interni non devono occuparsene.</li>
+      <li><strong>Rate Limiting e Throttling:</strong> limita il numero di richieste per client/API key in un intervallo di tempo, proteggendo i backend dall'abuso.</li>
+      <li><strong>Routing semantico:</strong> instrada le richieste in base all'URL, al metodo HTTP, agli header o al payload verso il servizio corretto.</li>
+      <li><strong>Trasformazione delle richieste:</strong> può modificare header, convertire formati (XML → JSON), aggregare risposte da più servizi.</li>
+      <li><strong>Versioning delle API:</strong> gestisce più versioni della stessa API (<code>/v1/</code>, <code>/v2/</code>) in modo trasparente per il client.</li>
+      <li><strong>Circuit Breaker:</strong> interrompe il traffico verso un servizio che sta fallendo, evitando cascate di errori nell'architettura.</li>
+      <li><strong>Documentazione e Developer Portal:</strong> spesso integra Swagger/OpenAPI per esporre la documentazione ai sviluppatori.</li>
+    </ul>
+
+    <div class="use-grid">
+      <div class="use-box use-yes">
+        <h4>Quando usarlo ✓</h4>
+        <ul>
+          <li>Architettura a microservizi con molte API da esporre</li>
+          <li>Necessità di autenticazione centralizzata</li>
+          <li>Si vuole applicare rate limiting per cliente</li>
+          <li>API pubbliche consumate da sviluppatori terzi</li>
+          <li>Gestione di più versioni della stessa API</li>
+          <li>Monitoraggio dettagliato dell'utilizzo delle API</li>
+        </ul>
+      </div>
+      <div class="use-box use-no">
+        <h4>Quando evitarlo ✗</h4>
+        <ul>
+          <li>Applicazione monolitica con una sola API semplice</li>
+          <li>Il gateway introduce latenza insostenibile per requisiti real-time stretti</li>
+          <li>Risorse limitate: un gateway enterprise è costoso da gestire</li>
+          <li>Comunicazione interna tra microservizi (meglio una service mesh)</li>
+        </ul>
+      </div>
+    </div>
+
+    <p>Strumenti comuni: <code>Kong</code>, <code>AWS API Gateway</code>, <code>Azure API Management</code>, <code>Apigee</code>, <code>Traefik</code>, <code>NGINX Plus</code>.</p>
+  </section>
+
+  <!-- ══════════════════════════════════════════ LOAD BALANCER -->
+  <section id="lb">
+    <div class="section-label">// 03 — Terzo componente</div>
+
+    <div class="component-card card-lb">
+      <div class="card-accent"></div>
+      <div class="card-badge">Load Balancer</div>
+      <h2>Il Load Balancer</h2>
+      <p>Il Load Balancer (bilanciatore di carico) risolve un problema di <strong>scalabilità e disponibilità</strong>: distribuisce il traffico in ingresso tra più istanze dello stesso server REST, in modo che nessuna istanza sia sovraccaricata e che il servizio rimanga attivo anche se una o più istanze vanno offline.</p>
+    </div>
+
+    <h3>Il problema che risolve</h3>
+    <p>Un singolo server REST ha limiti fisici: CPU, RAM, connessioni concorrenti. Quando il traffico supera questi limiti, il server rallenta o si blocca. La soluzione è avere più istanze dello stesso server e distribuire il carico tra loro.</p>
+
+    <div class="diagram-svg">
+      <svg viewBox="0 0 760 330" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+        <defs>
+          <marker id="arr-lb" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+            <polygon points="0 0, 8 3.5, 0 7" fill="#94a3b8"/>
+          </marker>
+          <marker id="arr-hc" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <polygon points="0 0, 6 3, 0 6" fill="#34d399"/>
+          </marker>
+          <marker id="arr-hc-back" markerWidth="6" markerHeight="6" refX="1" refY="3" orient="auto">
+            <polygon points="6 0, 0 3, 6 6" fill="#34d399"/>
+          </marker>
+        </defs>
+
+        <!-- Incoming traffic -->
+        <rect x="290" y="10" width="180" height="38" rx="3" fill="none" stroke="#f9fafb" stroke-width="1.5"/>
+        <text x="380" y="28" font-family="DM Mono,monospace" font-size="11" fill="#f9fafb" text-anchor="middle" font-weight="600">TRAFFICO IN ARRIVO</text>
+        <text x="380" y="42" font-family="DM Mono,monospace" font-size="9" fill="#9ca3af" text-anchor="middle">migliaia di richieste HTTP</text>
+
+        <!-- Arrow down to LB -->
+        <line x1="380" y1="50" x2="380" y2="88" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr-lb)"/>
+
+        <!-- LOAD BALANCER BOX -->
+        <rect x="170" y="90" width="420" height="110" rx="5" fill="#062318" stroke="#34d399" stroke-width="2.5"/>
+        <rect x="170" y="90" width="420" height="30" rx="5" fill="#0d3326"/>
+        <rect x="170" y="110" width="420" height="10" fill="#0d3326"/>
+        <text x="380" y="110" font-family="DM Mono,monospace" font-size="13" fill="#34d399" text-anchor="middle" font-weight="700" letter-spacing="2">LOAD  BALANCER</text>
+
+        <!-- 3 columns of info inside -->
+        <!-- col 1 -->
+        <text x="210" y="140" font-family="DM Mono,monospace" font-size="10" fill="#6ee7b7" font-weight="600">Algoritmo</text>
+        <text x="210" y="154" font-family="DM Mono,monospace" font-size="9.5" fill="#6b6458">Round Robin</text>
+        <text x="210" y="166" font-family="DM Mono,monospace" font-size="9.5" fill="#6b6458">Least Conn.</text>
+        <text x="210" y="178" font-family="DM Mono,monospace" font-size="9.5" fill="#6b6458">IP Hash</text>
+        <!-- separator -->
+        <line x1="316" y1="132" x2="316" y2="190" stroke="#0d3326" stroke-width="1"/>
+        <!-- col 2 -->
+        <text x="330" y="140" font-family="DM Mono,monospace" font-size="10" fill="#6ee7b7" font-weight="600">Health Check</text>
+        <text x="330" y="154" font-family="DM Mono,monospace" font-size="9.5" fill="#6b6458">GET /health</text>
+        <text x="330" y="166" font-family="DM Mono,monospace" font-size="9.5" fill="#6b6458">ogni 5 secondi</text>
+        <text x="330" y="178" font-family="DM Mono,monospace" font-size="9.5" fill="#6b6458">timeout: 2s</text>
+        <!-- separator -->
+        <line x1="448" y1="132" x2="448" y2="190" stroke="#0d3326" stroke-width="1"/>
+        <!-- col 3 -->
+        <text x="462" y="140" font-family="DM Mono,monospace" font-size="10" fill="#6ee7b7" font-weight="600">Sessioni</text>
+        <text x="462" y="154" font-family="DM Mono,monospace" font-size="9.5" fill="#6b6458">Sticky: opz.</text>
+        <text x="462" y="166" font-family="DM Mono,monospace" font-size="9.5" fill="#6b6458">SSL offload</text>
+        <text x="462" y="178" font-family="DM Mono,monospace" font-size="9.5" fill="#6b6458">L4 / L7</text>
+
+        <!-- 4 arrows down to instances -->
+        <line x1="218" y1="202" x2="100" y2="248" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-lb)"/>
+        <line x1="314" y1="202" x2="280" y2="248" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-lb)"/>
+        <line x1="446" y1="202" x2="470" y2="248" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-lb)"/>
+        <line x1="542" y1="202" x2="650" y2="248" stroke="#6b6458" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+        <!-- arrow labels -->
+        <text x="130" y="232" font-family="DM Mono,monospace" font-size="8.5" fill="#94a3b8" text-anchor="middle">req. 1</text>
+        <text x="290" y="232" font-family="DM Mono,monospace" font-size="8.5" fill="#94a3b8" text-anchor="middle">req. 2</text>
+        <text x="450" y="232" font-family="DM Mono,monospace" font-size="8.5" fill="#94a3b8" text-anchor="middle">req. 3</text>
+        <text x="610" y="232" font-family="DM Mono,monospace" font-size="8.5" fill="#6b6458" text-anchor="middle">esclusa</text>
+
+        <!-- 3 ACTIVE instances -->
+        <rect x="30" y="250" width="140" height="50" rx="3" fill="#111827" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="100" y="270" font-family="DM Mono,monospace" font-size="10" fill="#fbbf24" text-anchor="middle" font-weight="600">REST  istanza 1</text>
+        <text x="100" y="284" font-family="DM Mono,monospace" font-size="9" fill="#6b6458" text-anchor="middle">:8080  ● attiva</text>
+        <text x="100" y="296" font-family="DM Mono,monospace" font-size="9" fill="#34d399" text-anchor="middle">✓ health OK</text>
+
+        <rect x="210" y="250" width="140" height="50" rx="3" fill="#111827" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="280" y="270" font-family="DM Mono,monospace" font-size="10" fill="#fbbf24" text-anchor="middle" font-weight="600">REST  istanza 2</text>
+        <text x="280" y="284" font-family="DM Mono,monospace" font-size="9" fill="#6b6458" text-anchor="middle">:8081  ● attiva</text>
+        <text x="280" y="296" font-family="DM Mono,monospace" font-size="9" fill="#34d399" text-anchor="middle">✓ health OK</text>
+
+        <rect x="400" y="250" width="140" height="50" rx="3" fill="#111827" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="470" y="270" font-family="DM Mono,monospace" font-size="10" fill="#fbbf24" text-anchor="middle" font-weight="600">REST  istanza 3</text>
+        <text x="470" y="284" font-family="DM Mono,monospace" font-size="9" fill="#6b6458" text-anchor="middle">:8082  ● attiva</text>
+        <text x="470" y="296" font-family="DM Mono,monospace" font-size="9" fill="#34d399" text-anchor="middle">✓ health OK</text>
+
+        <!-- DOWN instance -->
+        <rect x="580" y="250" width="150" height="50" rx="3" fill="#1c0a0a" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5,3"/>
+        <text x="655" y="270" font-family="DM Mono,monospace" font-size="10" fill="#f87171" text-anchor="middle" font-weight="600">REST  istanza 4</text>
+        <text x="655" y="284" font-family="DM Mono,monospace" font-size="9" fill="#6b6458" text-anchor="middle">:8083  ✗ DOWN</text>
+        <text x="655" y="296" font-family="DM Mono,monospace" font-size="9" fill="#dc2626" text-anchor="middle">esclusa dal pool</text>
+
+        <!-- health check loop arrow -->
+        <path d="M590 210 Q740 220 730 265 Q720 290 733 300" fill="none" stroke="#34d399" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr-hc)"/>
+        <text x="748" y="255" font-family="DM Mono,monospace" font-size="8" fill="#34d399" transform="rotate(90,748,255)">health check</text>
+      </svg>
+    </div>
+
+    <h3>Algoritmi di bilanciamento</h3>
+
+    <h4>Round Robin</h4>
+    <p>Le richieste vengono distribuite in sequenza ciclica tra le istanze: 1→2→3→4→1→2→... È il metodo più semplice e funziona bene quando tutte le istanze hanno le stesse capacità.</p>
+
+    <h4>Least Connections</h4>
+    <p>La richiesta viene inviata all'istanza con il minor numero di connessioni attive. Utile quando le richieste hanno durate molto diverse (es. alcune chiamate REST restituiscono subito, altre impiegano secondi).</p>
+
+    <h4>IP Hash</h4>
+    <p>L'istanza viene scelta in base all'hash dell'IP del client. Lo stesso client va sempre sulla stessa istanza (<em>sticky session</em>). Utile se il server REST mantiene stato locale legato al client.</p>
+
+    <h4>Weighted Round Robin</h4>
+    <p>Come il Round Robin, ma le istanze più potenti ricevono un peso maggiore e dunque più richieste proporzionalmente.</p>
+
+    <h3>Caratteristiche principali</h3>
+    <ul class="feat-list lb">
+      <li><strong>Alta disponibilità (HA):</strong> se un'istanza si guasta, il LB la esclude automaticamente dopo i health check falliti. Il servizio rimane attivo.</li>
+      <li><strong>Scalabilità orizzontale:</strong> per aumentare la capacità si aggiungono nuove istanze senza downtime (scale-out).</li>
+      <li><strong>Health Check:</strong> il LB interroga periodicamente ogni istanza (es. <code>GET /health</code>) per verificarne la disponibilità.</li>
+      <li><strong>SSL Termination:</strong> come il proxy, può gestire HTTPS centralmente.</li>
+      <li><strong>Session Persistence:</strong> garantisce che un client venga sempre diretto alla stessa istanza durante una sessione (quando necessario).</li>
+      <li><strong>Funziona a diversi livelli OSI:</strong> L4 (TCP/UDP) o L7 (HTTP) — quest'ultimo permette routing basato sugli URL.</li>
+    </ul>
+
+    <h4>Layer 4 vs Layer 7</h4>
+    <p>Un LB di <strong>Livello 4</strong> lavora a livello di trasporto (TCP/UDP): è velocissimo ma non vede il contenuto HTTP. Un LB di <strong>Livello 7</strong> lavora a livello applicativo: può ispezionare header HTTP, cookie, URL e prendere decisioni di routing più intelligenti — avvicinandosi per certi versi a un proxy o gateway.</p>
+
+    <div class="use-grid">
+      <div class="use-box use-yes">
+        <h4>Quando usarlo ✓</h4>
+        <ul>
+          <li>Traffico elevato che una singola istanza non riesce a gestire</li>
+          <li>Requisiti di alta disponibilità: nessun singolo punto di fallimento</li>
+          <li>Deploy di più istanze dello stesso servizio REST</li>
+          <li>Necessità di aggiornamenti senza downtime (rolling update)</li>
+          <li>Ambienti cloud con autoscaling automatico</li>
+        </ul>
+      </div>
+      <div class="use-box use-no">
+        <h4>Quando evitarlo ✗</h4>
+        <ul>
+          <li>Una sola istanza del servizio (il LB è inutile e aggiunge latenza)</li>
+          <li>Servizi con forte stato locale non replicabile tra istanze</li>
+          <li>Applicazioni di sviluppo/test locali (overhead non giustificato)</li>
+          <li>Il servizio usa WebSocket e il LB L4 non supporta connessioni persistenti</li>
+        </ul>
+      </div>
+    </div>
+
+    <p>Strumenti comuni: <code>HAProxy</code>, <code>Nginx</code>, <code>AWS Elastic Load Balancing</code>, <code>Google Cloud Load Balancing</code>, <code>Traefik</code>, <code>MetalLB</code> (Kubernetes).</p>
+  </section>
+
+  <!-- ══════════════════════════════════════════ CONFRONTO -->
+  <section id="confronto">
+    <div class="section-label">// 04 — Analisi comparativa</div>
+    <h2>Confronto tra i tre componenti</h2>
+
+    <p>Nonostante le sovrapposizioni funzionali, i tre componenti hanno responsabilità primarie distinte. La tabella seguente riassume le differenze chiave.</p>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Caratteristica</th>
+          <th><span class="tag tag-proxy">Proxy</span></th>
+          <th><span class="tag tag-gateway">API Gateway</span></th>
+          <th><span class="tag tag-lb">Load Balancer</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Scopo primario</td>
+          <td>Intermediazione e filtraggio del traffico</td>
+          <td>Gestione intelligente delle API</td>
+          <td>Distribuzione del carico tra istanze</td>
+        </tr>
+        <tr>
+          <td>Conoscenza delle API</td>
+          <td>Bassa (generico HTTP)</td>
+          <td>Alta (conosce endpoint, versioni, authn)</td>
+          <td>Bassa (lavora su connessioni, non contenuto)</td>
+        </tr>
+        <tr>
+          <td>Autenticazione</td>
+          <td>No (o molto basica)</td>
+          <td>Sì (JWT, OAuth2, API Key)</td>
+          <td>No</td>
+        </tr>
+        <tr>
+          <td>Caching</td>
+          <td>Sì (punto di forza)</td>
+          <td>Sì (parziale)</td>
+          <td>No</td>
+        </tr>
+        <tr>
+          <td>Rate Limiting</td>
+          <td>No / limitato</td>
+          <td>Sì (punto di forza)</td>
+          <td>No</td>
+        </tr>
+        <tr>
+          <td>Alta disponibilità</td>
+          <td>Parzialmente</td>
+          <td>Parzialmente</td>
+          <td>Sì (punto di forza)</td>
+        </tr>
+        <tr>
+          <td>Scalabilità orizzontale</td>
+          <td>No</td>
+          <td>No (instrada, non scala)</td>
+          <td>Sì (punto di forza)</td>
+        </tr>
+        <tr>
+          <td>Health check</td>
+          <td>No / limitato</td>
+          <td>Sì (circuit breaker)</td>
+          <td>Sì (attivo e continuo)</td>
+        </tr>
+        <tr>
+          <td>Complessità di configurazione</td>
+          <td>Bassa</td>
+          <td>Alta</td>
+          <td>Media</td>
+        </tr>
+        <tr>
+          <td>Overhead di latenza</td>
+          <td>Basso</td>
+          <td>Medio-alto</td>
+          <td>Molto basso</td>
+        </tr>
+        <tr>
+          <td>Livello OSI</td>
+          <td>L7 (HTTP)</td>
+          <td>L7 (HTTP/API)</td>
+          <td>L4 (TCP) o L7 (HTTP)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Possono coesistere?</h3>
+    <p>Assolutamente sì — e nelle architetture enterprise lo fanno spesso. Una configurazione tipica in produzione potrebbe essere:</p>
+
+    <div class="diagram-svg">
+      <svg viewBox="0 0 700 440" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+        <defs>
+          <marker id="arr-c" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+            <polygon points="0 0, 8 3.5, 0 7" fill="#94a3b8"/>
+          </marker>
+          <marker id="arr-cr" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+            <polygon points="0 0, 8 3.5, 0 7" fill="#6b6458"/>
+          </marker>
+        </defs>
+
+        <!-- INTERNET / CLIENT -->
+        <rect x="240" y="10" width="220" height="38" rx="3" fill="none" stroke="#f9fafb" stroke-width="1.5"/>
+        <text x="350" y="28" font-family="DM Mono,monospace" font-size="12" fill="#f9fafb" text-anchor="middle" font-weight="600">INTERNET  /  CLIENT</text>
+        <text x="350" y="42" font-family="DM Mono,monospace" font-size="9" fill="#9ca3af" text-anchor="middle">richiesta HTTPS</text>
+
+        <!-- arrow 1 -->
+        <line x1="350" y1="50" x2="350" y2="84" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr-c)"/>
+        <text x="358" y="72" font-family="DM Mono,monospace" font-size="9" fill="#94a3b8">HTTPS</text>
+
+        <!-- PROXY / CDN -->
+        <rect x="150" y="86" width="400" height="52" rx="4" fill="#0f2340" stroke="#60a5fa" stroke-width="2"/>
+        <text x="350" y="107" font-family="DM Mono,monospace" font-size="12" fill="#60a5fa" text-anchor="middle" font-weight="700">REVERSE PROXY  /  CDN</text>
+        <text x="350" y="125" font-family="DM Mono,monospace" font-size="9.5" fill="#6b6458" text-anchor="middle">SSL termination  ·  caching statico  ·  filtraggio IP  ·  compressione</text>
+
+        <!-- arrow 2 -->
+        <line x1="350" y1="140" x2="350" y2="174" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr-c)"/>
+        <text x="358" y="162" font-family="DM Mono,monospace" font-size="9" fill="#94a3b8">HTTP interno</text>
+
+        <!-- API GATEWAY -->
+        <rect x="150" y="176" width="400" height="52" rx="4" fill="#1a0d33" stroke="#c084fc" stroke-width="2"/>
+        <text x="350" y="197" font-family="DM Mono,monospace" font-size="12" fill="#c084fc" text-anchor="middle" font-weight="700">API  GATEWAY</text>
+        <text x="350" y="215" font-family="DM Mono,monospace" font-size="9.5" fill="#6b6458" text-anchor="middle">autenticazione JWT  ·  rate limiting  ·  routing semantico  ·  versioning</text>
+
+        <!-- arrow 3 -->
+        <line x1="350" y1="230" x2="350" y2="264" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr-c)"/>
+        <text x="358" y="252" font-family="DM Mono,monospace" font-size="9" fill="#94a3b8">richiesta autenticata</text>
+
+        <!-- LOAD BALANCER -->
+        <rect x="150" y="266" width="400" height="52" rx="4" fill="#062318" stroke="#34d399" stroke-width="2"/>
+        <text x="350" y="287" font-family="DM Mono,monospace" font-size="12" fill="#34d399" text-anchor="middle" font-weight="700">LOAD  BALANCER</text>
+        <text x="350" y="305" font-family="DM Mono,monospace" font-size="9.5" fill="#6b6458" text-anchor="middle">distribuzione Round Robin  ·  health check  ·  failover automatico</text>
+
+        <!-- 3 arrows to servers -->
+        <line x1="248" y1="320" x2="130" y2="368" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-c)"/>
+        <line x1="350" y1="320" x2="350" y2="368" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-c)"/>
+        <line x1="452" y1="320" x2="570" y2="368" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-c)"/>
+
+        <!-- 3 SERVER instances -->
+        <rect x="50" y="370" width="160" height="42" rx="3" fill="#111827" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="130" y="388" font-family="DM Mono,monospace" font-size="10" fill="#fbbf24" text-anchor="middle" font-weight="600">SERVER REST</text>
+        <text x="130" y="402" font-family="DM Mono,monospace" font-size="9" fill="#6b6458" text-anchor="middle">istanza 1  :8080</text>
+
+        <rect x="270" y="370" width="160" height="42" rx="3" fill="#111827" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="350" y="388" font-family="DM Mono,monospace" font-size="10" fill="#fbbf24" text-anchor="middle" font-weight="600">SERVER REST</text>
+        <text x="350" y="402" font-family="DM Mono,monospace" font-size="9" fill="#6b6458" text-anchor="middle">istanza 2  :8081</text>
+
+        <rect x="490" y="370" width="160" height="42" rx="3" fill="#111827" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="570" y="388" font-family="DM Mono,monospace" font-size="10" fill="#fbbf24" text-anchor="middle" font-weight="600">SERVER REST</text>
+        <text x="570" y="402" font-family="DM Mono,monospace" font-size="9" fill="#6b6458" text-anchor="middle">istanza 3  :8082</text>
+
+        <!-- return path arrow on the right -->
+        <path d="M660 391 Q690 290 690 160 Q690 50 472 28" fill="none" stroke="#6b6458" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-cr)"/>
+        <text x="697" y="220" font-family="DM Mono,monospace" font-size="9" fill="#6b6458" text-anchor="middle" transform="rotate(90,697,220)">risposta HTTP  ←</text>
+      </svg>
+    </div>
+
+    <div class="callout callout-info">
+      <strong>Principio chiave:</strong> ogni componente rispetta la <em>separation of concerns</em>. Il proxy non si preoccupa di quante istanze ci sono; il gateway non sa come distribuire il carico; il load balancer non sa nulla di autenticazione. Questa separazione rende il sistema modulare e mantenibile.
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════ SCENARI -->
+  <section id="scenari">
+    <div class="section-label">// 05 — Applicazione pratica</div>
+    <h2>Scenari reali di utilizzo</h2>
+
+    <p>Vediamo come scegliere il componente giusto in base al contesto applicativo.</p>
+
+    <div class="scenario-grid">
+      <div class="scenario-box">
+        <span class="s-icon">🏫</span>
+        <h4>Piccolo progetto scolastico</h4>
+        <p>Un'API REST su un singolo server, pochi utenti. <strong>Nessun intermediario necessario.</strong> Al limite, un reverse proxy Nginx per la SSL termination.</p>
+      </div>
+      <div class="scenario-box">
+        <span class="s-icon">🛒</span>
+        <h4>E-commerce medio</h4>
+        <p>Traffico variabile, picchi nel weekend. <strong>Load Balancer</strong> con 2–4 istanze + <strong>Reverse Proxy</strong> con caching per le pagine prodotto statiche.</p>
+      </div>
+      <div class="scenario-box">
+        <span class="s-icon">📱</span>
+        <h4>App con API pubblica</h4>
+        <p>Sviluppatori terzi usano le API, serve controllo delle quote. <strong>API Gateway</strong> con rate limiting, API key, documentazione OpenAPI.</p>
+      </div>
+      <div class="scenario-box">
+        <span class="s-icon">🏢</span>
+        <h4>Architettura enterprise</h4>
+        <p>Decine di microservizi, milioni di richieste/giorno. Tutti e tre i componenti in combinazione: <strong>CDN + Gateway + LB</strong>.</p>
+      </div>
+      <div class="scenario-box">
+        <span class="s-icon">☁️</span>
+        <h4>Cloud con autoscaling</h4>
+        <p>Le istanze si aggiungono e rimuovono automaticamente in base al traffico. Il <strong>Load Balancer</strong> cloud-native (es. AWS ALB) si integra con l'autoscaler.</p>
+      </div>
+      <div class="scenario-box">
+        <span class="s-icon">🔒</span>
+        <h4>Rete aziendale chiusa</h4>
+        <p>I dipendenti accedono a servizi REST interni. Un <strong>Forward Proxy</strong> controlla e logga il traffico in uscita verso API esterne.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════ SOMMARIO -->
+  <section id="sommario">
+    <div class="section-label">// 06 — Riepilogo</div>
+    <h2>Sommario e punti chiave</h2>
+
+    <h3>Proxy</h3>
+    <p>Intermediario generico tra client e server. Il suo punto di forza è il <strong>caching</strong> e l'<strong>anonimizzazione</strong>. Nella variante <em>reverse proxy</em> è quasi sempre presente nelle architetture web per gestire SSL e nascondere la rete interna. È semplice da configurare e introduce poca latenza.</p>
+
+    <h3>API Gateway</h3>
+    <p>Il "controllore di frontiera" delle API. Conosce profondamente il dominio applicativo e gestisce <strong>autenticazione</strong>, <strong>rate limiting</strong>, <strong>routing semantico</strong> e <strong>versioning</strong>. È il componente giusto quando si espongono API a client diversi o a sviluppatori terzi. Ha costo di configurazione e latenza superiori rispetto al proxy.</p>
+
+    <h3>Load Balancer</h3>
+    <p>Il garante della <strong>scalabilità</strong> e dell'<strong>alta disponibilità</strong>. Non sa nulla di autenticazione o caching: il suo unico scopo è distribuire le richieste in modo equo tra le istanze e rilevare quelle non disponibili. È indispensabile in qualsiasi sistema che debba reggere traffico significativo o garantire continuità di servizio.</p>
+
+    <div class="callout callout-info">
+      <strong>Regola pratica:</strong> quando si progetta un'architettura, si inizia sempre dal Load Balancer se si hanno più istanze, si aggiunge il Gateway se le API sono esposte all'esterno o a client eterogenei, e si considera il Proxy se serve caching o controllo del traffico. Non bisogna aggiungere complessità prima che sia necessaria — il principio YAGNI (<em>You Aren't Gonna Need It</em>) vale anche in architettura di rete.
+    </div>
+
+    <h3>Domande di verifica</h3>
+    <ul class="feat-list">
+      <li>Qual è la differenza fondamentale tra un forward proxy e un reverse proxy?</li>
+      <li>Perché un API Gateway è preferibile a un semplice proxy in un'architettura a microservizi?</li>
+      <li>Spiega il concetto di health check e perché è fondamentale per un load balancer.</li>
+      <li>In quale scenario useresti un LB di Livello 4 invece di uno di Livello 7?</li>
+      <li>Progetta un'architettura per un'applicazione con 3 microservizi REST, traffico di 10.000 richieste/minuto e API pubblica con rate limiting. Quali componenti sceglieresti e perché?</li>
+    </ul>
+  </section>
+
+</div>
+
+<footer>
+  Informatica · Classe 5ª · Architetture per servizi REST &nbsp;·&nbsp; Documento didattico
+</footer>
+
+</body>
+</html>

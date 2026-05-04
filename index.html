@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProxyGatewayBalancer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #f4f6f9; color: #222; padding: 2rem; }
+    h1 { text-align: center; margin-bottom: 2rem; font-size: 1.6rem; color: #1a5fa8; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+    .card {
+      background: #ffffff;
+      border: 1px solid #d0d8e8;
+      border-radius: 10px;
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+    .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      width: fit-content;
+    }
+    .badge-mp4 { background: #c0392b; color: #fff; }
+    .badge-html { background: #2980b9; color: #fff; }
+    .filename { font-size: 1rem; word-break: break-word; color: #333; }
+    .card a {
+      display: block;
+      text-align: center;
+      background: #1a5fa8;
+      color: #fff;
+      text-decoration: none;
+      padding: 0.5rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      margin-top: auto;
+      transition: background 0.15s;
+    }
+    .card a:hover { background: #154d8a; }
+  </style>
+</head>
+<body>
+  <h1>ProxyGatewayBalancer</h1>
+  <div class="grid">
+
+    <div class="card">
+      <span class="badge badge-mp4">MP4</span>
+      <span class="filename">Proxy,_Gateway_&amp;_Load_Balancer.mp4</span>
+      <a href="Proxy,_Gateway_&_Load_Balancer.mp4" target="_blank">Riproduci video</a>
+    </div>
+
+    <div class="card">
+      <span class="badge badge-html">HTML</span>
+      <span class="filename">proxy_gateway_loadbalancer.html</span>
+      <a href="proxy_gateway_loadbalancer.html" target="_blank">Apri pagina</a>
+    </div>
+
+  </div>
+</body>
+</html>
