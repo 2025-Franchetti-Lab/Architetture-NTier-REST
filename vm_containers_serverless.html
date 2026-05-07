@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VM, Containers & Serverless — Informatica 5ª</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:              #f5f2eb;
+    --surface:         #ffffff;
+    --surface-2:       #f0ece2;
+    --border:          #ddd8cc;
+    --text:            #1a1714;
+    --text-muted:      #6b6458;
+    --rule:            #c8c0b0;
+
+    --accent-vm:          #1d4ed8;
+    --accent-vm-light:    #dbeafe;
+    --accent-ct:          #059669;
+    --accent-ct-light:    #d1fae5;
+    --accent-sl:          #7c3aed;
+    --accent-sl-light:    #ede9fe;
+    --accent-warn:        #b45309;
+    --accent-warn-light:  #fef3c7;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 16px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--text);
+    color: #f5f2eb;
+    padding: 3.5rem 4rem 3rem;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 320px; height: 320px;
+    border: 40px solid rgba(255,255,255,.06);
+    border-radius: 50%;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    right: 60px; bottom: -80px;
+    width: 200px; height: 200px;
+    border: 30px solid rgba(255,255,255,.04);
+    border-radius: 50%;
+  }
+  .header-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: rgba(245,242,235,.5);
+    margin-bottom: .75rem;
+  }
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 400;
+    line-height: 1.15;
+    max-width: 700px;
+  }
+  header h1 em {
+    font-style: italic;
+    color: rgba(245,242,235,.65);
+  }
+  .header-meta {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 2rem;
+    font-size: .82rem;
+    color: rgba(245,242,235,.55);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: .05em;
+  }
+
+  /* ── NAV TOC ── */
+  nav.toc {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 4rem;
+    display: flex;
+    gap: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+  }
+  nav.toc a {
+    font-size: .78rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: .3rem .9rem;
+    border-right: 1px solid var(--border);
+    letter-spacing: .04em;
+    transition: color .2s;
+  }
+  nav.toc a:last-child { border-right: none; }
+  nav.toc a:hover { color: var(--text); }
+
+  /* ── LAYOUT ── */
+  .wrapper {
+    max-width: 940px;
+    margin: 0 auto;
+    padding: 3rem 2rem 6rem;
+  }
+
+  section { margin-bottom: 4rem; }
+  section + section {
+    border-top: 1px solid var(--rule);
+    padding-top: 3.5rem;
+  }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: .68rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: .5rem;
+  }
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    font-weight: 400;
+    line-height: 1.2;
+    margin-bottom: 1.25rem;
+  }
+  h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.35rem;
+    font-weight: 400;
+    margin: 2rem 0 .75rem;
+  }
+  h4 {
+    font-size: .85rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin: 1.5rem 0 .5rem;
+    color: var(--text-muted);
+  }
+  p { margin-bottom: 1rem; }
+  p:last-child { margin-bottom: 0; }
+
+  /* ── COMPONENT CARDS ── */
+  .component-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 2rem 2rem 1.75rem;
+    margin: 2rem 0;
+    position: relative;
+  }
+  .component-card .card-accent {
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    border-radius: 2px 0 0 2px;
+  }
+  .card-vm  .card-accent { background: var(--accent-vm); }
+  .card-ct  .card-accent { background: var(--accent-ct); }
+  .card-sl  .card-accent { background: var(--accent-sl); }
+
+  .component-card h2 { font-size: 1.6rem; margin-bottom: .25rem; }
+  .card-badge {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: .65rem;
+    font-weight: 500;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    padding: .2rem .6rem;
+    border-radius: 2px;
+    margin-bottom: 1.25rem;
+  }
+  .card-vm .card-badge { background: var(--accent-vm-light); color: var(--accent-vm); }
+  .card-ct .card-badge { background: var(--accent-ct-light); color: var(--accent-ct); }
+  .card-sl .card-badge { background: var(--accent-sl-light); color: var(--accent-sl); }
+
+  /* ── SVG DIAGRAMS ── */
+  .diagram-wrap {
+    background: #1a1714;
+    border-radius: 4px;
+    margin: 1.5rem 0;
+    padding: 1.5rem 1.25rem;
+    overflow-x: auto;
+  }
+  .diagram-wrap svg { display: block; width: 100%; height: auto; }
+
+  /* ── FEAT LIST ── */
+  .feat-list { list-style: none; margin: 1rem 0; }
+  .feat-list li {
+    padding: .45rem 0 .45rem 1.5rem;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+    font-size: .94rem;
+  }
+  .feat-list li:last-child { border-bottom: none; }
+  .feat-list li::before {
+    content: '→';
+    position: absolute; left: 0;
+    font-family: 'DM Mono', monospace;
+    font-size: .8rem;
+    color: var(--text-muted);
+  }
+  .feat-list.vm li::before { color: var(--accent-vm); }
+  .feat-list.ct li::before { color: var(--accent-ct); }
+  .feat-list.sl li::before { color: var(--accent-sl); }
+
+  /* ── PRO / CONTRO ── */
+  .pc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1.25rem 0;
+  }
+  @media(max-width:600px) { .pc-grid { grid-template-columns: 1fr; } }
+
+  .pc-box {
+    padding: 1.25rem 1.5rem;
+    border-radius: 2px;
+    font-size: .9rem;
+  }
+  .pc-box h4 {
+    font-size: .72rem; font-weight: 600;
+    letter-spacing: .14em; text-transform: uppercase;
+    margin: 0 0 .75rem; color: inherit;
+  }
+  .pc-box ul { list-style: none; }
+  .pc-box ul li {
+    padding: .25rem 0 .25rem 1.4rem;
+    position: relative; font-size: .87rem;
+  }
+  .pc-box ul li::before { position: absolute; left: 0; font-family: 'DM Mono', monospace; font-size: .8rem; }
+  .pro-box { background: var(--accent-ct-light); color: #064e3b; }
+  .pro-box h4 { color: var(--accent-ct); }
+  .pro-box li::before { content: '✓'; color: var(--accent-ct); }
+  .con-box { background: #fef2f2; color: #7f1d1d; }
+  .con-box h4 { color: #dc2626; }
+  .con-box li::before { content: '✗'; color: #dc2626; }
+
+  /* ── USE CASE GRID ── */
+  .use-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+    margin: 1.25rem 0;
+  }
+  .use-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 1.2rem 1.4rem;
+  }
+  .use-card .uc-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: .62rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: .18rem .55rem;
+    border-radius: 2px;
+    display: inline-block;
+    margin-bottom: .6rem;
+  }
+  .uc-vm  { background: var(--accent-vm-light);  color: var(--accent-vm); }
+  .uc-ct  { background: var(--accent-ct-light);  color: var(--accent-ct); }
+  .uc-sl  { background: var(--accent-sl-light);  color: var(--accent-sl); }
+  .use-card h4 { font-size: .95rem; margin-bottom: .4rem; text-transform: none; letter-spacing: 0; color: var(--text); }
+  .use-card p { font-size: .84rem; color: var(--text-muted); margin: 0; }
+
+  /* ── COMPARE TABLE ── */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .875rem;
+    margin: 2rem 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  .compare-table thead tr { background: var(--text); color: #f5f2eb; }
+  .compare-table th {
+    padding: .85rem 1.25rem;
+    text-align: left;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    font-size: .75rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .compare-table td {
+    padding: .75rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: var(--surface-2); }
+  .compare-table td:first-child {
+    font-weight: 600;
+    font-size: .83rem;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    white-space: nowrap;
+  }
+  .cell-vm  { color: var(--accent-vm);  font-weight: 500; }
+  .cell-ct  { color: var(--accent-ct);  font-weight: 500; }
+  .cell-sl  { color: var(--accent-sl);  font-weight: 500; }
+
+  /* ── NOTE BOX ── */
+  .note {
+    background: var(--accent-warn-light);
+    border: 1px solid #fde68a;
+    border-radius: 2px;
+    padding: .9rem 1.2rem;
+    font-size: .87rem;
+    color: #78350f;
+    margin: 1.2rem 0;
+  }
+  .note strong { font-weight: 600; }
+
+  /* ── DECISION FLOWCHART LABEL ── */
+  .flow-label {
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: .75rem;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--text);
+    color: rgba(245,242,235,.45);
+    text-align: center;
+    padding: 2rem;
+    font-size: .78rem;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: .06em;
+  }
+  footer a { color: rgba(245,242,235,.65); text-decoration: none; }
+  footer a:hover { color: #f5f2eb; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     HEADER
+══════════════════════════════════════════ -->
+<header>
+  <p class="header-tag">Informatica 5ª — Infrastrutture Cloud</p>
+  <h1>Virtual Machines, <em>Containers</em><br>&amp; Serverless Computing</h1>
+  <div class="header-meta">
+    <span>03 — paradigmi di deployment</span>
+    <span>confronto · pro/contro · casi d'uso</span>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════
+     NAV
+══════════════════════════════════════════ -->
+<nav class="toc">
+  <a href="#intro">Introduzione</a>
+  <a href="#vm">Virtual Machines</a>
+  <a href="#containers">Containers</a>
+  <a href="#serverless">Serverless</a>
+  <a href="#confronto">Confronto</a>
+  <a href="#casi-uso">Quando usare cosa</a>
+</nav>
+
+<div class="wrapper">
+
+<!-- ══════════════════════════════════════════
+     SEZIONE 0 — INTRODUZIONE
+══════════════════════════════════════════ -->
+<section id="intro">
+  <p class="section-label">00 — panoramica</p>
+  <h2>Tre modi di eseguire il software</h2>
+
+  <p>Quando si distribuisce un'applicazione nel mondo reale, la prima domanda non è <em>quale linguaggio</em> usare, ma <em>dove e come</em> far girare il codice. Tre paradigmi dominano il panorama attuale: le <strong>Virtual Machines</strong>, i <strong>Containers</strong> e il <strong>Serverless Computing</strong>. Ognuno risolve problemi diversi e comporta compromessi precisi su isolamento, velocità, costo e complessità operativa.</p>
+
+  <p>Questa pagina illustra i tre paradigmi con diagrammi architetturali, analisi pro/contro e linee guida pratiche per scegliere quello giusto in base al contesto.</p>
+
+  <!-- SVG — stack comparison overview -->
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 860 260" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#9ca3af"/>
+        </marker>
+      </defs>
+
+      <!-- === COLUMN LABELS === -->
+      <text x="143" y="22" text-anchor="middle" font-family="DM Mono, monospace" font-size="11" fill="#1d4ed8" letter-spacing="2" font-weight="600">VIRTUAL MACHINE</text>
+      <text x="430" y="22" text-anchor="middle" font-family="DM Mono, monospace" font-size="11" fill="#059669" letter-spacing="2" font-weight="600">CONTAINER</text>
+      <text x="717" y="22" text-anchor="middle" font-family="DM Mono, monospace" font-size="11" fill="#7c3aed" letter-spacing="2" font-weight="600">SERVERLESS</text>
+
+      <!-- ===== VM STACK ===== -->
+      <!-- Hardware -->
+      <rect x="20" y="35" width="246" height="32" rx="3" fill="#374151"/>
+      <text x="143" y="56" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" fill="#e5e7eb" font-weight="600">Hardware fisico</text>
+
+      <!-- Hypervisor -->
+      <rect x="20" y="74" width="246" height="32" rx="3" fill="#1e3a8a"/>
+      <text x="143" y="95" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" fill="#bfdbfe" font-weight="600">Hypervisor (VMware / KVM)</text>
+
+      <!-- VM 1 -->
+      <rect x="22" y="113" width="116" height="90" rx="3" fill="#1d3a6e" stroke="#3b82f6" stroke-width="1.2"/>
+      <rect x="30" y="120" width="100" height="22" rx="2" fill="#2563a8" opacity=".9"/>
+      <text x="80" y="135" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#dbeafe">Guest OS</text>
+      <rect x="30" y="148" width="100" height="22" rx="2" fill="#1e40af" opacity=".8"/>
+      <text x="80" y="163" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#dbeafe">Libs / Deps</text>
+      <rect x="30" y="176" width="100" height="22" rx="2" fill="#1e3a8a"/>
+      <text x="80" y="191" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#93c5fd">App A</text>
+      <text x="80" y="213" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6b7280">VM 1</text>
+
+      <!-- VM 2 -->
+      <rect x="148" y="113" width="116" height="90" rx="3" fill="#1d3a6e" stroke="#3b82f6" stroke-width="1.2"/>
+      <rect x="156" y="120" width="100" height="22" rx="2" fill="#2563a8" opacity=".9"/>
+      <text x="206" y="135" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#dbeafe">Guest OS</text>
+      <rect x="156" y="148" width="100" height="22" rx="2" fill="#1e40af" opacity=".8"/>
+      <text x="206" y="163" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#dbeafe">Libs / Deps</text>
+      <rect x="156" y="176" width="100" height="22" rx="2" fill="#1e3a8a"/>
+      <text x="206" y="191" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#93c5fd">App B</text>
+      <text x="206" y="213" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6b7280">VM 2</text>
+
+      <!-- VM label -->
+      <text x="143" y="248" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#4b5563">~GB per VM · avvio in minuti</text>
+
+      <!-- ===== CONTAINER STACK ===== -->
+      <!-- Hardware -->
+      <rect x="307" y="35" width="246" height="32" rx="3" fill="#374151"/>
+      <text x="430" y="56" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" fill="#e5e7eb" font-weight="600">Hardware fisico</text>
+
+      <!-- Host OS -->
+      <rect x="307" y="74" width="246" height="32" rx="3" fill="#134e4a"/>
+      <text x="430" y="95" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" fill="#a7f3d0" font-weight="600">Host OS (kernel condiviso)</text>
+
+      <!-- Container Engine -->
+      <rect x="307" y="113" width="246" height="22" rx="3" fill="#065f46"/>
+      <text x="430" y="128" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#6ee7b7" font-weight="600">Container Engine (Docker / containerd)</text>
+
+      <!-- Container A -->
+      <rect x="311" y="142" width="112" height="60" rx="3" fill="#064e3b" stroke="#34d399" stroke-width="1.2"/>
+      <rect x="319" y="149" width="96" height="18" rx="2" fill="#059669" opacity=".7"/>
+      <text x="367" y="162" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#d1fae5">Libs / Deps</text>
+      <rect x="319" y="173" width="96" height="18" rx="2" fill="#047857"/>
+      <text x="367" y="186" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#a7f3d0">App A</text>
+      <text x="367" y="213" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6b7280">Container 1</text>
+
+      <!-- Container B -->
+      <rect x="431" y="142" width="112" height="60" rx="3" fill="#064e3b" stroke="#34d399" stroke-width="1.2"/>
+      <rect x="439" y="149" width="96" height="18" rx="2" fill="#059669" opacity=".7"/>
+      <text x="487" y="162" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#d1fae5">Libs / Deps</text>
+      <rect x="439" y="173" width="96" height="18" rx="2" fill="#047857"/>
+      <text x="487" y="186" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#a7f3d0">App B</text>
+      <text x="487" y="213" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6b7280">Container 2</text>
+
+      <text x="430" y="248" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#4b5563">~MB per container · avvio in secondi</text>
+
+      <!-- ===== SERVERLESS STACK ===== -->
+      <!-- Cloud provider -->
+      <rect x="593" y="35" width="246" height="32" rx="3" fill="#374151"/>
+      <text x="716" y="56" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" fill="#e5e7eb" font-weight="600">Cloud Provider (gestito)</text>
+
+      <!-- Invisible infra -->
+      <rect x="593" y="74" width="246" height="32" rx="3" fill="#3b0764"/>
+      <text x="716" y="95" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" fill="#d8b4fe" font-weight="600">OS · Runtime · Scaling (nascosti)</text>
+
+      <!-- Event bus -->
+      <rect x="593" y="113" width="246" height="22" rx="3" fill="#5b21b6"/>
+      <text x="716" y="128" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#c4b5fd" font-weight="600">Event Bus / Trigger</text>
+
+      <!-- Function A -->
+      <rect x="597" y="142" width="110" height="60" rx="3" fill="#4c1d95" stroke="#a78bfa" stroke-width="1.2"/>
+      <rect x="605" y="149" width="94" height="16" rx="2" fill="#7c3aed" opacity=".7"/>
+      <text x="652" y="161" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#ddd6fe">fn handler()</text>
+      <rect x="605" y="171" width="94" height="18" rx="2" fill="#6d28d9"/>
+      <text x="652" y="184" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#c4b5fd">Logica A</text>
+      <text x="652" y="213" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6b7280">Function 1</text>
+
+      <!-- Function B -->
+      <rect x="725" y="142" width="110" height="60" rx="3" fill="#4c1d95" stroke="#a78bfa" stroke-width="1.2"/>
+      <rect x="733" y="149" width="94" height="16" rx="2" fill="#7c3aed" opacity=".7"/>
+      <text x="780" y="161" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#ddd6fe">fn handler()</text>
+      <rect x="733" y="171" width="94" height="18" rx="2" fill="#6d28d9"/>
+      <text x="780" y="184" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#c4b5fd">Logica B</text>
+      <text x="780" y="213" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6b7280">Function 2</text>
+
+      <text x="716" y="248" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#4b5563">nessun server da gestire · pay-per-call</text>
+    </svg>
+  </div>
+  <p class="flow-label">Confronto degli stack architetturali — VM vs Container vs Serverless</p>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     SEZIONE 1 — VIRTUAL MACHINES
+══════════════════════════════════════════ -->
+<section id="vm">
+  <p class="section-label">01 — paradigma</p>
+  <h2>Virtual Machines</h2>
+
+  <p>Una <strong>Virtual Machine</strong> (VM) è un'emulazione software completa di un computer fisico. Grazie a un livello software chiamato <em>hypervisor</em>, è possibile eseguire più sistemi operativi guest su un singolo host, con ciascuno che crede di operare su hardware dedicato.</p>
+
+  <div class="component-card card-vm">
+    <div class="card-accent"></div>
+    <h2>Come funziona l'Hypervisor</h2>
+    <span class="card-badge">Virtual Machine Monitor</span>
+
+    <p>L'hypervisor si frappone tra il hardware fisico e i sistemi operativi guest. Esistono due tipi principali:</p>
+
+    <!-- SVG Hypervisor types -->
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 760 210" xmlns="http://www.w3.org/2000/svg">
+        <!-- Type 1 -->
+        <text x="190" y="20" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#93c5fd" letter-spacing="2">TYPE 1 — BARE METAL</text>
+
+        <rect x="30" y="32" width="320" height="30" rx="3" fill="#374151"/>
+        <text x="190" y="52" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#d1d5db" font-weight="600">Hardware fisico</text>
+
+        <rect x="30" y="70" width="320" height="30" rx="3" fill="#1e3a8a"/>
+        <text x="190" y="90" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#bfdbfe" font-weight="600">Hypervisor Type 1 (VMware ESXi, Hyper-V, KVM)</text>
+
+        <rect x="35" y="108" width="148" height="85" rx="3" fill="#1d3a6e" stroke="#3b82f6" stroke-width="1"/>
+        <rect x="43" y="115" width="132" height="20" rx="2" fill="#2563a8"/>
+        <text x="109" y="129" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#dbeafe">Guest OS 1</text>
+        <rect x="43" y="140" width="132" height="20" rx="2" fill="#1e40af"/>
+        <text x="109" y="154" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#93c5fd">App A</text>
+        <text x="109" y="205" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6b7280">VM 1</text>
+
+        <rect x="197" y="108" width="148" height="85" rx="3" fill="#1d3a6e" stroke="#3b82f6" stroke-width="1"/>
+        <rect x="205" y="115" width="132" height="20" rx="2" fill="#2563a8"/>
+        <text x="271" y="129" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#dbeafe">Guest OS 2</text>
+        <rect x="205" y="140" width="132" height="20" rx="2" fill="#1e40af"/>
+        <text x="271" y="154" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#93c5fd">App B</text>
+        <text x="271" y="205" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6b7280">VM 2</text>
+
+        <!-- Type 2 -->
+        <text x="570" y="20" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#93c5fd" letter-spacing="2">TYPE 2 — HOSTED</text>
+
+        <rect x="410" y="32" width="320" height="30" rx="3" fill="#374151"/>
+        <text x="570" y="52" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#d1d5db" font-weight="600">Hardware fisico</text>
+
+        <rect x="410" y="70" width="320" height="30" rx="3" fill="#1e3a8a" opacity=".5"/>
+        <text x="570" y="90" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#bfdbfe" font-weight="600">Host OS (Windows / macOS / Linux)</text>
+
+        <rect x="410" y="108" width="320" height="22" rx="3" fill="#1e3a8a"/>
+        <text x="570" y="123" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#bfdbfe" font-weight="600">Hypervisor Type 2 (VirtualBox, VMware Workstation)</text>
+
+        <rect x="415" y="137" width="148" height="60" rx="3" fill="#1d3a6e" stroke="#3b82f6" stroke-width="1"/>
+        <rect x="423" y="144" width="132" height="18" rx="2" fill="#2563a8"/>
+        <text x="489" y="157" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#dbeafe">Guest OS + App A</text>
+        <text x="489" y="207" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6b7280">VM 1</text>
+
+        <rect x="577" y="137" width="148" height="60" rx="3" fill="#1d3a6e" stroke="#3b82f6" stroke-width="1"/>
+        <rect x="585" y="144" width="132" height="18" rx="2" fill="#2563a8"/>
+        <text x="651" y="157" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#dbeafe">Guest OS + App B</text>
+        <text x="651" y="207" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6b7280">VM 2</text>
+      </svg>
+    </div>
+
+    <h4>Caratteristiche principali</h4>
+    <ul class="feat-list vm">
+      <li><strong>Isolamento completo</strong> — ogni VM ha il proprio kernel, memoria, storage e stack di rete separati dal host e dalle altre VM.</li>
+      <li><strong>OS guest indipendente</strong> — si può eseguire Windows su un host Linux e viceversa senza alcuna modifica.</li>
+      <li><strong>Snapshot e live migration</strong> — lo stato di una VM può essere salvato e ripristinato in qualsiasi momento, oppure spostato su un altro host a caldo.</li>
+      <li><strong>Overhead elevato</strong> — ogni VM replica un intero OS (tipicamente 1–20 GB di disco, 512 MB–8 GB di RAM solo per il sistema).</li>
+      <li><strong>Avvio lento</strong> — il boot di un sistema operativo completo richiede da 30 secondi a diversi minuti.</li>
+      <li><strong>Consolidazione server</strong> — più VM sullo stesso hardware riducono il numero di macchine fisiche necessarie.</li>
+    </ul>
+
+    <div class="pc-grid">
+      <div class="pc-box pro-box">
+        <h4>Vantaggi</h4>
+        <ul>
+          <li>Isolamento di sicurezza massimo (kernel separato)</li>
+          <li>Compatibilità con qualsiasi OS guest</li>
+          <li>Snapshot, rollback e live migration</li>
+          <li>Ideale per workload legacy</li>
+          <li>Facilmente integrabile con sistemi di monitoring esistenti</li>
+          <li>Supporta ambienti multi-tenant ad alto isolamento</li>
+        </ul>
+      </div>
+      <div class="pc-box con-box">
+        <h4>Svantaggi</h4>
+        <ul>
+          <li>Overhead elevato (CPU, RAM, disco per ogni OS)</li>
+          <li>Boot time lento (minuti, non secondi)</li>
+          <li>Immagini di grandi dimensioni (GB)</li>
+          <li>Scalabilità orizzontale lenta e costosa</li>
+          <li>Provisioning manuale complesso</li>
+          <li>Consumo energetico maggiore rispetto a soluzioni più leggere</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     SEZIONE 2 — CONTAINERS
+══════════════════════════════════════════ -->
+<section id="containers">
+  <p class="section-label">02 — paradigma</p>
+  <h2>Containers</h2>
+
+  <p>Un <strong>container</strong> è un'unità di deployment leggera che impacchetta il codice dell'applicazione insieme alle sue dipendenze (librerie, runtime, variabili d'ambiente), isolandola dal sistema host ma <em>condividendo il kernel del sistema operativo</em>. Docker è lo strumento più diffuso; Kubernetes è l'orchestratore di riferimento per ambienti di produzione.</p>
+
+  <div class="component-card card-ct">
+    <div class="card-accent"></div>
+    <h2>Architettura dei Container</h2>
+    <span class="card-badge">Docker · Kubernetes · OCI</span>
+
+    <p>I container utilizzano due funzionalità del kernel Linux — <strong>namespaces</strong> (isolamento di risorse) e <strong>cgroups</strong> (limitazione di risorse) — per creare ambienti di esecuzione separati senza la necessità di emulare hardware.</p>
+
+    <!-- SVG Container architecture -->
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 780 270" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr2" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z" fill="#6b7280"/>
+          </marker>
+        </defs>
+
+        <!-- Hardware -->
+        <rect x="20" y="10" width="740" height="28" rx="3" fill="#374151"/>
+        <text x="390" y="29" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#d1d5db" font-weight="600">Hardware fisico</text>
+
+        <!-- Host OS -->
+        <rect x="20" y="46" width="740" height="28" rx="3" fill="#134e4a"/>
+        <text x="390" y="65" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#a7f3d0" font-weight="600">Host OS — kernel Linux (namespaces + cgroups)</text>
+
+        <!-- Docker Engine -->
+        <rect x="20" y="82" width="740" height="26" rx="3" fill="#065f46"/>
+        <text x="390" y="100" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#6ee7b7" font-weight="600">Container Runtime (Docker Engine / containerd / CRI-O)</text>
+
+        <!-- Container 1 -->
+        <rect x="25" y="116" width="168" height="110" rx="3" fill="#064e3b" stroke="#34d399" stroke-width="1.3"/>
+        <text x="109" y="135" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6ee7b7" letter-spacing="1">CONTAINER 1</text>
+        <rect x="33" y="140" width="152" height="20" rx="2" fill="#059669" opacity=".6"/>
+        <text x="109" y="154" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#d1fae5">Libs / Deps (layer)</text>
+        <rect x="33" y="164" width="152" height="20" rx="2" fill="#047857" opacity=".7"/>
+        <text x="109" y="178" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#d1fae5">Runtime (Node 20)</text>
+        <rect x="33" y="188" width="152" height="30" rx="2" fill="#065f46"/>
+        <text x="109" y="207" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#6ee7b7" font-weight="600">App A</text>
+
+        <!-- Container 2 -->
+        <rect x="205" y="116" width="168" height="110" rx="3" fill="#064e3b" stroke="#34d399" stroke-width="1.3"/>
+        <text x="289" y="135" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6ee7b7" letter-spacing="1">CONTAINER 2</text>
+        <rect x="213" y="140" width="152" height="20" rx="2" fill="#059669" opacity=".6"/>
+        <text x="289" y="154" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#d1fae5">Libs / Deps (layer)</text>
+        <rect x="213" y="164" width="152" height="20" rx="2" fill="#047857" opacity=".7"/>
+        <text x="289" y="178" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#d1fae5">Runtime (Python 3.12)</text>
+        <rect x="213" y="188" width="152" height="30" rx="2" fill="#065f46"/>
+        <text x="289" y="207" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#6ee7b7" font-weight="600">App B</text>
+
+        <!-- Container 3 (DB) -->
+        <rect x="385" y="116" width="168" height="110" rx="3" fill="#064e3b" stroke="#34d399" stroke-width="1.3"/>
+        <text x="469" y="135" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6ee7b7" letter-spacing="1">CONTAINER 3</text>
+        <rect x="393" y="140" width="152" height="20" rx="2" fill="#059669" opacity=".6"/>
+        <text x="469" y="154" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#d1fae5">PostgreSQL 16</text>
+        <rect x="393" y="164" width="152" height="20" rx="2" fill="#047857" opacity=".7"/>
+        <text x="469" y="178" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#d1fae5">Volume persistente</text>
+        <rect x="393" y="188" width="152" height="30" rx="2" fill="#065f46"/>
+        <text x="469" y="207" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#6ee7b7" font-weight="600">Database</text>
+
+        <!-- Kubernetes box -->
+        <rect x="565" y="116" width="190" height="110" rx="3" fill="#022c22" stroke="#6ee7b7" stroke-width="1" stroke-dasharray="5,3"/>
+        <text x="660" y="138" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6ee7b7" letter-spacing="2">KUBERNETES</text>
+        <text x="660" y="162" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#a7f3d0">Scheduling · Scaling</text>
+        <text x="660" y="180" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#a7f3d0">Service Discovery</text>
+        <text x="660" y="198" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#a7f3d0">Load Balancing</text>
+        <text x="660" y="216" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#a7f3d0">Rolling Updates</text>
+
+        <!-- Layer note -->
+        <text x="390" y="256" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6b7280">kernel Linux condiviso — overhead minimo — avvio in millisecondi</text>
+      </svg>
+    </div>
+
+    <h4>Caratteristiche principali</h4>
+    <ul class="feat-list ct">
+      <li><strong>Kernel condiviso</strong> — i container condividono il kernel del host OS, eliminando la necessità di emulare hardware o eseguire un OS completo per ogni istanza.</li>
+      <li><strong>Image immutabili a layer</strong> — le immagini Docker sono costruite a strati (Union File System); i layer comuni sono condivisi, riducendo drasticamente spazio e banda.</li>
+      <li><strong>Portabilità</strong> — "build once, run anywhere": un container eseguito in sviluppo funziona identicamente in staging e produzione.</li>
+      <li><strong>Avvio in millisecondi</strong> — non essendoci boot di un OS, i container si avviano in pochi centesimi di secondo.</li>
+      <li><strong>Orchestrazione</strong> — Kubernetes gestisce deployment, scaling automatico, service discovery e rolling updates su cluster di migliaia di nodi.</li>
+      <li><strong>Isolamento parziale</strong> — l'isolamento è meno forte rispetto alle VM; vulnerabilità del kernel host possono potenzialmente impattare tutti i container.</li>
+    </ul>
+
+    <div class="pc-grid">
+      <div class="pc-box pro-box">
+        <h4>Vantaggi</h4>
+        <ul>
+          <li>Leggerissimi (MB vs GB delle VM)</li>
+          <li>Avvio quasi istantaneo</li>
+          <li>Alta densità — decine di container per host</li>
+          <li>Portabilità totale tra ambienti</li>
+          <li>Pipeline CI/CD rapide e riproducibili</li>
+          <li>Orchestrazione avanzata con Kubernetes</li>
+        </ul>
+      </div>
+      <div class="pc-box con-box">
+        <h4>Svantaggi</h4>
+        <ul>
+          <li>Isolamento di sicurezza inferiore alle VM</li>
+          <li>Solo Linux natively (Windows containers con limitazioni)</li>
+          <li>Gestione dello stato (storage persistente) complessa</li>
+          <li>Kubernetes ha una curva di apprendimento ripida</li>
+          <li>Debug di problemi di rete inter-container non banale</li>
+          <li>Container image mal configurate sono un rischio di sicurezza</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     SEZIONE 3 — SERVERLESS
+══════════════════════════════════════════ -->
+<section id="serverless">
+  <p class="section-label">03 — paradigma</p>
+  <h2>Serverless Computing</h2>
+
+  <p>Il termine <strong>Serverless</strong> non significa "nessun server", ma che lo sviluppatore non deve <em>gestire</em> i server. Il cloud provider si occupa di provisioning, scaling, patching e disponibilità dell'infrastruttura. Il modello più diffuso è il <strong>Function as a Service (FaaS)</strong>: il codice viene eseguito in risposta a eventi e fatturato al millisecondo di esecuzione.</p>
+
+  <div class="component-card card-sl">
+    <div class="card-accent"></div>
+    <h2>Architettura Event-Driven</h2>
+    <span class="card-badge">FaaS · AWS Lambda · Azure Functions · Google Cloud Run</span>
+
+    <p>In un'architettura serverless, le funzioni sono stateless, effimere e si attivano in risposta a <em>trigger</em>: richieste HTTP, messaggi su code, eventi da database, timer schedulati, ecc.</p>
+
+    <!-- SVG Serverless architecture -->
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 800 230" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr3" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z" fill="#9ca3af"/>
+          </marker>
+        </defs>
+
+        <!-- Event sources -->
+        <text x="100" y="18" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#a78bfa" letter-spacing="2">SORGENTI EVENTO</text>
+
+        <rect x="20" y="28" width="160" height="26" rx="3" fill="#3b0764" stroke="#a78bfa" stroke-width="1"/>
+        <text x="100" y="45" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#ddd6fe">HTTP Request (API GW)</text>
+
+        <rect x="20" y="62" width="160" height="26" rx="3" fill="#3b0764" stroke="#a78bfa" stroke-width="1"/>
+        <text x="100" y="79" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#ddd6fe">Message Queue (SQS)</text>
+
+        <rect x="20" y="96" width="160" height="26" rx="3" fill="#3b0764" stroke="#a78bfa" stroke-width="1"/>
+        <text x="100" y="113" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#ddd6fe">DB Trigger (DynamoDB)</text>
+
+        <rect x="20" y="130" width="160" height="26" rx="3" fill="#3b0764" stroke="#a78bfa" stroke-width="1"/>
+        <text x="100" y="147" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#ddd6fe">Cron / Schedule</text>
+
+        <!-- Arrows to event bus -->
+        <line x1="182" y1="41" x2="272" y2="90" stroke="#7c3aed" stroke-width="1.2" marker-end="url(#arr3)" opacity=".7"/>
+        <line x1="182" y1="75" x2="272" y2="95" stroke="#7c3aed" stroke-width="1.2" marker-end="url(#arr3)" opacity=".7"/>
+        <line x1="182" y1="109" x2="272" y2="100" stroke="#7c3aed" stroke-width="1.2" marker-end="url(#arr3)" opacity=".7"/>
+        <line x1="182" y1="143" x2="272" y2="105" stroke="#7c3aed" stroke-width="1.2" marker-end="url(#arr3)" opacity=".7"/>
+
+        <!-- Cloud provider managed layer -->
+        <rect x="275" y="25" width="250" height="155" rx="4" fill="#2e1065" stroke="#7c3aed" stroke-width="1.5"/>
+        <text x="400" y="46" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#c4b5fd" letter-spacing="2">CLOUD PROVIDER</text>
+
+        <!-- Managed items -->
+        <rect x="285" y="55" width="230" height="22" rx="2" fill="#4c1d95" opacity=".7"/>
+        <text x="400" y="70" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#ddd6fe">Provisioning automatico</text>
+
+        <rect x="285" y="82" width="230" height="22" rx="2" fill="#4c1d95" opacity=".7"/>
+        <text x="400" y="97" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#ddd6fe">Scaling 0→∞ istantaneo</text>
+
+        <rect x="285" y="109" width="230" height="22" rx="2" fill="#4c1d95" opacity=".7"/>
+        <text x="400" y="124" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#ddd6fe">Patching OS &amp; Runtime</text>
+
+        <rect x="285" y="136" width="230" height="22" rx="2" fill="#4c1d95" opacity=".7"/>
+        <text x="400" y="151" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#ddd6fe">Alta disponibilità (multi-AZ)</text>
+
+        <!-- Arrow to functions -->
+        <line x1="527" y1="102" x2="575" y2="65" stroke="#9ca3af" stroke-width="1.2" marker-end="url(#arr3)"/>
+        <line x1="527" y1="102" x2="575" y2="115" stroke="#9ca3af" stroke-width="1.2" marker-end="url(#arr3)"/>
+        <line x1="527" y1="102" x2="575" y2="165" stroke="#9ca3af" stroke-width="1.2" marker-end="url(#arr3)"/>
+
+        <!-- Functions -->
+        <text x="680" y="18" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#a78bfa" letter-spacing="2">FUNZIONI</text>
+
+        <rect x="578" y="28" width="200" height="52" rx="3" fill="#4c1d95" stroke="#a78bfa" stroke-width="1.2"/>
+        <text x="678" y="48" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#c4b5fd">processOrder(event)</text>
+        <text x="678" y="66" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="9" fill="#8b5cf6">⏱ max 15 min · stateless</text>
+
+        <rect x="578" y="92" width="200" height="52" rx="3" fill="#4c1d95" stroke="#a78bfa" stroke-width="1.2"/>
+        <text x="678" y="112" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#c4b5fd">sendNotification(event)</text>
+        <text x="678" y="130" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="9" fill="#8b5cf6">⏱ max 15 min · stateless</text>
+
+        <rect x="578" y="148" width="200" height="52" rx="3" fill="#4c1d95" stroke="#a78bfa" stroke-width="1.2"/>
+        <text x="678" y="168" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#c4b5fd">generateReport(event)</text>
+        <text x="678" y="186" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="9" fill="#8b5cf6">⏱ max 15 min · stateless</text>
+
+        <!-- Billing note -->
+        <text x="400" y="210" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6b7280">fatturazione al millisecondo · zero costo a zero richieste</text>
+      </svg>
+    </div>
+
+    <h4>Caratteristiche principali</h4>
+    <ul class="feat-list sl">
+      <li><strong>Zero gestione server</strong> — nessun provisioning, patching, monitoraggio dell'infrastruttura. Il provider gestisce tutto.</li>
+      <li><strong>Scaling automatico 0→∞</strong> — da zero istanze (nessun costo a riposo) a migliaia di istanze parallele in millisecondi, senza configurazione.</li>
+      <li><strong>Modello pay-per-use</strong> — si paga solo il tempo CPU effettivo (al millisecondo), non per risorse allocate ma inutilizzate.</li>
+      <li><strong>Stateless per design</strong> — ogni invocazione è indipendente; lo stato deve essere esternalizzato su database, cache o object storage.</li>
+      <li><strong>Cold start</strong> — la prima invocazione dopo un periodo di inattività può richiedere qualche centinaio di ms–secondi per inizializzare l'ambiente.</li>
+      <li><strong>Limiti di esecuzione</strong> — AWS Lambda ha un timeout massimo di 15 minuti; non adatto a processi long-running.</li>
+    </ul>
+
+    <div class="pc-grid">
+      <div class="pc-box pro-box">
+        <h4>Vantaggi</h4>
+        <ul>
+          <li>Zero overhead operativo (no DevOps per l'infra)</li>
+          <li>Costo zero a zero traffico</li>
+          <li>Scaling automatico illimitato</li>
+          <li>Time-to-market rapidissimo</li>
+          <li>Fault tolerance integrata dal provider</li>
+          <li>Focus totale sulla logica di business</li>
+        </ul>
+      </div>
+      <div class="pc-box con-box">
+        <h4>Svantaggi</h4>
+        <ul>
+          <li>Cold start latency (specialmente con Java/.NET)</li>
+          <li>Timeout massimo (es. 15 min su Lambda)</li>
+          <li>Vendor lock-in elevato</li>
+          <li>Debug e testing locale più complessi</li>
+          <li>Costo alto ad alto volume continuativo</li>
+          <li>Gestione dello stato complessa (necessita servizi esterni)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Cold Start:</strong> quando una funzione non viene invocata per un certo periodo, il provider dealloca le risorse. La successiva invocazione ("cold start") deve caricare il runtime e il codice ex novo. Linguaggi compilati come Java o .NET possono avere cold start di 1–3 secondi; Go e linguaggi interpretati leggeri come Python e Node.js partono in 100–300 ms. Le "provisioned concurrency" (Lambda) e i container pre-riscaldati riducono questo problema a scapito del costo.
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     SEZIONE 4 — CONFRONTO
+══════════════════════════════════════════ -->
+<section id="confronto">
+  <p class="section-label">04 — analisi comparativa</p>
+  <h2>Confronto diretto</h2>
+
+  <p>La tabella seguente riassume le differenze chiave tra i tre paradigmi su dimensioni tecniche, operative ed economiche.</p>
+
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Dimensione</th>
+        <th>Virtual Machine</th>
+        <th>Container</th>
+        <th>Serverless</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Unità di deploy</td>
+        <td class="cell-vm">Immagine VM (GB)</td>
+        <td class="cell-ct">Immagine Docker (MB)</td>
+        <td class="cell-sl">Funzione / Handler</td>
+      </tr>
+      <tr>
+        <td>Tempo di avvio</td>
+        <td class="cell-vm">Minuti</td>
+        <td class="cell-ct">Secondi / ms</td>
+        <td class="cell-sl">ms (warm) / 1–3 s (cold)</td>
+      </tr>
+      <tr>
+        <td>Isolamento</td>
+        <td class="cell-vm">Massimo (kernel separato)</td>
+        <td class="cell-ct">Medio (kernel condiviso)</td>
+        <td class="cell-sl">Gestito dal provider</td>
+      </tr>
+      <tr>
+        <td>Overhead risorse</td>
+        <td class="cell-vm">Elevato (OS per VM)</td>
+        <td class="cell-ct">Basso (solo app + libs)</td>
+        <td class="cell-sl">Nessuno lato utente</td>
+      </tr>
+      <tr>
+        <td>Scalabilità</td>
+        <td class="cell-vm">Manuale / lenta</td>
+        <td class="cell-ct">Automatica (con K8s)</td>
+        <td class="cell-sl">Automatica 0→∞</td>
+      </tr>
+      <tr>
+        <td>Portabilità</td>
+        <td class="cell-vm">Bassa (dipende dall'hypervisor)</td>
+        <td class="cell-ct">Alta (OCI standard)</td>
+        <td class="cell-sl">Bassa (vendor lock-in)</td>
+      </tr>
+      <tr>
+        <td>Gestione OS</td>
+        <td class="cell-vm">A carico dell'utente</td>
+        <td class="cell-ct">A carico dell'utente</td>
+        <td class="cell-sl">A carico del provider</td>
+      </tr>
+      <tr>
+        <td>Stato applicativo</td>
+        <td class="cell-vm">Stateful nativo</td>
+        <td class="cell-ct">Volume persistente</td>
+        <td class="cell-sl">Stateless (esterno)</td>
+      </tr>
+      <tr>
+        <td>Modello di costo</td>
+        <td class="cell-vm">Pay per VM allocata</td>
+        <td class="cell-ct">Pay per nodo/cluster</td>
+        <td class="cell-sl">Pay per invocazione/ms</td>
+      </tr>
+      <tr>
+        <td>Curva di apprendimento</td>
+        <td class="cell-vm">Media</td>
+        <td class="cell-ct">Alta (K8s)</td>
+        <td class="cell-sl">Bassa (ma debugging hard)</td>
+      </tr>
+      <tr>
+        <td>Sicurezza</td>
+        <td class="cell-vm">Forte isolamento HW</td>
+        <td class="cell-ct">Dipende dalla configurazione</td>
+        <td class="cell-sl">Dipende dal provider</td>
+      </tr>
+      <tr>
+        <td>Esempi cloud</td>
+        <td class="cell-vm">AWS EC2, Azure VM, GCE</td>
+        <td class="cell-ct">EKS, AKS, GKE</td>
+        <td class="cell-sl">Lambda, Azure Fn, Cloud Run</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SVG — Radar / positioning chart -->
+  <div class="diagram-wrap" style="margin-top:2rem;">
+    <svg viewBox="0 0 760 330" xmlns="http://www.w3.org/2000/svg">
+      <!-- Title -->
+      <text x="380" y="20" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#9ca3af" letter-spacing="2">POSIZIONAMENTO — Velocità vs Isolamento vs Costo operativo</text>
+
+      <!-- Axes -->
+      <!-- X: velocità avvio (0=lento, 100=veloce) -->
+      <!-- Y: isolamento (0=basso, 100=alto) -->
+
+      <!-- Grid -->
+      <line x1="80" y1="260" x2="700" y2="260" stroke="#374151" stroke-width="1"/>
+      <line x1="80" y1="260" x2="80" y2="40" stroke="#374151" stroke-width="1"/>
+
+      <!-- Grid lines -->
+      <line x1="80" y1="187" x2="700" y2="187" stroke="#374151" stroke-width=".5" stroke-dasharray="4,4" opacity=".5"/>
+      <line x1="80" y1="113" x2="700" y2="113" stroke="#374151" stroke-width=".5" stroke-dasharray="4,4" opacity=".5"/>
+      <line x1="234" y1="260" x2="234" y2="40" stroke="#374151" stroke-width=".5" stroke-dasharray="4,4" opacity=".5"/>
+      <line x1="390" y1="260" x2="390" y2="40" stroke="#374151" stroke-width=".5" stroke-dasharray="4,4" opacity=".5"/>
+      <line x1="546" y1="260" x2="546" y2="40" stroke="#374151" stroke-width=".5" stroke-dasharray="4,4" opacity=".5"/>
+
+      <!-- Axis labels -->
+      <text x="390" y="285" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6b7280">Velocità di avvio →</text>
+      <text x="30" y="152" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6b7280" transform="rotate(-90, 30, 152)">Isolamento →</text>
+
+      <!-- Scale labels X -->
+      <text x="80" y="275" text-anchor="middle" font-family="DM Mono, monospace" font-size="8" fill="#6b7280">lento</text>
+      <text x="700" y="275" text-anchor="middle" font-family="DM Mono, monospace" font-size="8" fill="#6b7280">veloce</text>
+
+      <!-- Scale labels Y -->
+      <text x="68" y="264" text-anchor="middle" font-family="DM Mono, monospace" font-size="8" fill="#6b7280">basso</text>
+      <text x="68" y="44" text-anchor="middle" font-family="DM Mono, monospace" font-size="8" fill="#6b7280">alto</text>
+
+      <!-- VM bubble: lenta, isolamento alto -->
+      <circle cx="155" cy="75" r="42" fill="#1d4ed8" opacity=".25"/>
+      <circle cx="155" cy="75" r="28" fill="#1d4ed8" opacity=".5"/>
+      <text x="155" y="71" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#dbeafe" font-weight="600">VM</text>
+      <text x="155" y="86" text-anchor="middle" font-family="DM Mono, monospace" font-size="8" fill="#93c5fd">~minuti</text>
+      <!-- costo bubble label -->
+      <text x="155" y="135" text-anchor="middle" font-family="DM Mono, monospace" font-size="8" fill="#6b7280">costo: fisso / allocato</text>
+
+      <!-- Container bubble: veloce, isolamento medio -->
+      <circle cx="490" cy="175" r="42" fill="#059669" opacity=".25"/>
+      <circle cx="490" cy="175" r="28" fill="#059669" opacity=".5"/>
+      <text x="490" y="171" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#d1fae5" font-weight="600">Container</text>
+      <text x="490" y="186" text-anchor="middle" font-family="DM Mono, monospace" font-size="8" fill="#6ee7b7">~secondi</text>
+      <text x="490" y="230" text-anchor="middle" font-family="DM Mono, monospace" font-size="8" fill="#6b7280">costo: per nodo</text>
+
+      <!-- Serverless bubble: velocissimo, isolamento basso (gestito) -->
+      <circle cx="660" cy="230" r="42" fill="#7c3aed" opacity=".25"/>
+      <circle cx="660" cy="230" r="28" fill="#7c3aed" opacity=".5"/>
+      <text x="660" y="226" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#ede9fe" font-weight="600">Serverless</text>
+      <text x="660" y="241" text-anchor="middle" font-family="DM Mono, monospace" font-size="8" fill="#c4b5fd">~ms</text>
+      <text x="660" y="285" text-anchor="middle" font-family="DM Mono, monospace" font-size="8" fill="#6b7280">costo: pay-per-call</text>
+
+      <!-- Legend -->
+      <circle cx="100" cy="298" r="6" fill="#1d4ed8" opacity=".7"/>
+      <text x="112" y="302" font-family="DM Mono, monospace" font-size="8" fill="#9ca3af">Virtual Machine</text>
+      <circle cx="225" cy="298" r="6" fill="#059669" opacity=".7"/>
+      <text x="237" y="302" font-family="DM Mono, monospace" font-size="8" fill="#9ca3af">Container</text>
+      <circle cx="325" cy="298" r="6" fill="#7c3aed" opacity=".7"/>
+      <text x="337" y="302" font-family="DM Mono, monospace" font-size="8" fill="#9ca3af">Serverless</text>
+      <text x="450" y="302" font-family="DM Mono, monospace" font-size="8" fill="#4b5563">raggio = overhead operativo</text>
+    </svg>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     SEZIONE 5 — QUANDO USARE COSA
+══════════════════════════════════════════ -->
+<section id="casi-uso">
+  <p class="section-label">05 — linee guida</p>
+  <h2>Quando usare cosa</h2>
+
+  <p>La scelta tra VM, container e serverless non è assoluta: molte architetture moderne le combinano. Tuttavia, per ogni scenario esiste un paradigma naturalmente più adatto.</p>
+
+  <h3>Virtual Machines — scegli quando…</h3>
+  <div class="use-grid">
+    <div class="use-card">
+      <span class="uc-tag uc-vm">VM</span>
+      <h4>Applicazioni legacy</h4>
+      <p>Software che dipende da un OS specifico, da librerie di sistema particolari o che non è stato progettato per il deployment containerizzato.</p>
+    </div>
+    <div class="use-card">
+      <span class="uc-tag uc-vm">VM</span>
+      <h4>Sicurezza e compliance rigorosa</h4>
+      <p>Ambienti regolamentati (healthcare, finance, governo) dove l'isolamento a livello hardware è un requisito obbligatorio.</p>
+    </div>
+    <div class="use-card">
+      <span class="uc-tag uc-vm">VM</span>
+      <h4>Workload stateful intensivi</h4>
+      <p>Database ad alte prestazioni, sistemi che richiedono accesso diretto all'hardware (GPU, FPGA) o configurazioni di rete avanzate.</p>
+    </div>
+    <div class="use-card">
+      <span class="uc-tag uc-vm">VM</span>
+      <h4>Ambienti di sviluppo isolati</h4>
+      <p>Team che necessitano di replicare ambienti OS completi per test, sviluppo o demo senza impattare il sistema host.</p>
+    </div>
+  </div>
+
+  <h3>Containers — scegli quando…</h3>
+  <div class="use-grid">
+    <div class="use-card">
+      <span class="uc-tag uc-ct">Container</span>
+      <h4>Microservizi</h4>
+      <p>Architetture a microservizi dove ogni servizio ha le proprie dipendenze, scala indipendentemente e viene rilasciato autonomamente.</p>
+    </div>
+    <div class="use-card">
+      <span class="uc-tag uc-ct">Container</span>
+      <h4>Pipeline CI/CD</h4>
+      <p>Ambienti di build e test riproducibili al 100%: "funziona sul mio PC" diventa un problema del passato.</p>
+    </div>
+    <div class="use-card">
+      <span class="uc-tag uc-ct">Container</span>
+      <h4>Portabilità multi-cloud</h4>
+      <p>Applicazioni che devono girare su AWS, Azure, GCP e on-premise senza modifiche, sfruttando Kubernetes come strato di astrazione.</p>
+    </div>
+    <div class="use-card">
+      <span class="uc-tag uc-ct">Container</span>
+      <h4>Scaling rapido e denso</h4>
+      <p>Servizi web con traffico variabile che beneficiano dell'alta densità (centinaia di container per host) e dell'avvio istantaneo.</p>
+    </div>
+  </div>
+
+  <h3>Serverless — scegli quando…</h3>
+  <div class="use-grid">
+    <div class="use-card">
+      <span class="uc-tag uc-sl">Serverless</span>
+      <h4>Event processing</h4>
+      <p>Elaborazione di file caricati su S3, messaggi su code SQS/Kafka, webhook, notifiche push: ogni evento attiva una funzione.</p>
+    </div>
+    <div class="use-card">
+      <span class="uc-tag uc-sl">Serverless</span>
+      <h4>Backend per applicazioni mobile</h4>
+      <p>API semplici con traffico imprevedibile. Costo zero nelle ore di basso utilizzo, scaling automatico nei picchi.</p>
+    </div>
+    <div class="use-card">
+      <span class="uc-tag uc-sl">Serverless</span>
+      <h4>Automazioni e job schedulati</h4>
+      <p>Report notturni, cleanup del database, invio di email periodiche: task brevi che non giustificano un server sempre attivo.</p>
+    </div>
+    <div class="use-card">
+      <span class="uc-tag uc-sl">Serverless</span>
+      <h4>Startup e MVP</h4>
+      <p>Progetti in fase iniziale dove il team è piccolo, il budget limitato e si vuole validare il prodotto senza gestire infrastruttura.</p>
+    </div>
+  </div>
+
+  <!-- SVG — Decision flowchart -->
+  <h3 style="margin-top:2.5rem;">Albero decisionale</h3>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 760 380" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr4" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L7,3 z" fill="#9ca3af"/>
+        </marker>
+      </defs>
+
+      <!-- Start -->
+      <rect x="290" y="10" width="180" height="36" rx="18" fill="#374151"/>
+      <text x="380" y="33" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#f9fafb" font-weight="600">Nuovo deployment</text>
+
+      <!-- Q1 -->
+      <line x1="380" y1="46" x2="380" y2="74" stroke="#6b7280" stroke-width="1.2" marker-end="url(#arr4)"/>
+      <rect x="220" y="76" width="320" height="38" rx="4" fill="#1f2937" stroke="#4b5563" stroke-width="1"/>
+      <text x="380" y="95" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#e5e7eb">Hai bisogno di un OS specifico</text>
+      <text x="380" y="109" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#e5e7eb">o di isolamento hardware?</text>
+
+      <!-- Yes → VM -->
+      <line x1="220" y1="95" x2="120" y2="95" stroke="#6b7280" stroke-width="1.2" marker-end="url(#arr4)"/>
+      <text x="168" y="89" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#9ca3af">Sì</text>
+      <rect x="20" y="76" width="96" height="38" rx="4" fill="#1e3a8a" stroke="#3b82f6" stroke-width="1.3"/>
+      <text x="68" y="99" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" fill="#dbeafe" font-weight="700">VM</text>
+
+      <!-- No → Q2 -->
+      <line x1="380" y1="114" x2="380" y2="152" stroke="#6b7280" stroke-width="1.2" marker-end="url(#arr4)"/>
+      <text x="390" y="136" font-family="DM Mono, monospace" font-size="9" fill="#9ca3af">No</text>
+
+      <!-- Q2 -->
+      <rect x="180" y="154" width="400" height="38" rx="4" fill="#1f2937" stroke="#4b5563" stroke-width="1"/>
+      <text x="380" y="173" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#e5e7eb">Il processo è short-lived (&lt;15 min)</text>
+      <text x="380" y="187" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#e5e7eb">e attivato da eventi?</text>
+
+      <!-- Yes → Q3 serverless -->
+      <line x1="380" y1="192" x2="380" y2="228" stroke="#6b7280" stroke-width="1.2" marker-end="url(#arr4)"/>
+      <text x="390" y="213" font-family="DM Mono, monospace" font-size="9" fill="#9ca3af">Sì</text>
+
+      <!-- Q3 -->
+      <rect x="190" y="230" width="380" height="38" rx="4" fill="#1f2937" stroke="#4b5563" stroke-width="1"/>
+      <text x="380" y="249" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#e5e7eb">Il traffico è molto variabile</text>
+      <text x="380" y="263" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" fill="#e5e7eb">o hai budget limitato?</text>
+
+      <!-- Yes → Serverless -->
+      <line x1="570" y1="249" x2="640" y2="249" stroke="#6b7280" stroke-width="1.2" marker-end="url(#arr4)"/>
+      <text x="603" y="243" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#9ca3af">Sì</text>
+      <rect x="643" y="230" width="110" height="38" rx="4" fill="#4c1d95" stroke="#a78bfa" stroke-width="1.3"/>
+      <text x="698" y="253" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" fill="#ede9fe" font-weight="700">Serverless</text>
+
+      <!-- No from Q3 → Container -->
+      <line x1="380" y1="268" x2="380" y2="304" stroke="#6b7280" stroke-width="1.2" marker-end="url(#arr4)"/>
+      <text x="390" y="289" font-family="DM Mono, monospace" font-size="9" fill="#9ca3af">No</text>
+      <rect x="280" y="306" width="200" height="38" rx="4" fill="#064e3b" stroke="#34d399" stroke-width="1.3"/>
+      <text x="380" y="329" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" fill="#d1fae5" font-weight="700">Container (+ K8s)</text>
+
+      <!-- No from Q2 → Container -->
+      <line x1="180" y1="173" x2="100" y2="173" stroke="#6b7280" stroke-width="1.2"/>
+      <line x1="100" y1="173" x2="100" y2="325" stroke="#6b7280" stroke-width="1.2"/>
+      <line x1="100" y1="325" x2="278" y2="325" stroke="#6b7280" stroke-width="1.2" marker-end="url(#arr4)"/>
+      <text x="140" y="167" font-family="DM Mono, monospace" font-size="9" fill="#9ca3af">No</text>
+
+      <!-- Bottom note -->
+      <text x="380" y="370" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#4b5563">nota: le architetture reali spesso combinano tutti e tre i paradigmi</text>
+    </svg>
+  </div>
+
+  <div class="note" style="margin-top:1.5rem;">
+    <strong>Nota architetturale:</strong> nei sistemi moderni è normale trovare i tre paradigmi co-esistenti. Ad esempio: un database PostgreSQL su VM dedicata, i microservizi applicativi su container orchestrati da Kubernetes, e le elaborazioni asincrone (ridimensionamento immagini, invio email, report) su Lambda. Scegliere il paradigma giusto per ogni componente è un'abilità fondamentale dell'ingegnere cloud.
+  </div>
+</section>
+
+</div><!-- end wrapper -->
+
+<footer>
+  <p>Informatica 5ª — Architetture Cloud &amp; Infrastrutture · 2025–2026</p>
+  <p style="margin-top:.4rem;"><a href="index.html">← Torna all'indice</a></p>
+</footer>
+
+</body>
+</html>
