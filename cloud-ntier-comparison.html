@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Architettura N-Tier su Cloud: AWS vs Azure vs Google Cloud</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f8f9fa;
+      color: #1a1a2e;
+      line-height: 1.6;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+      color: #fff;
+      padding: 48px 40px 40px;
+      text-align: center;
+    }
+    header h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.5px; }
+    header p  { margin-top: 10px; font-size: 1.05rem; opacity: .75; max-width: 700px; margin-inline: auto; }
+
+    /* ── LAYOUT ── */
+    main { max-width: 1200px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    section { margin-bottom: 56px; }
+    h2 {
+      font-size: 1.55rem; font-weight: 700;
+      border-left: 5px solid #0f3460;
+      padding-left: 14px; margin-bottom: 24px;
+      color: #0f3460;
+    }
+    h3 { font-size: 1.15rem; font-weight: 600; color: #16213e; margin: 20px 0 10px; }
+
+    p { margin-bottom: 12px; }
+
+    /* ── CARDS ── */
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 2px 16px rgba(0,0,0,.07);
+      padding: 28px 32px;
+      margin-bottom: 28px;
+    }
+
+    .cloud-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 24px;
+    }
+
+    /* ── PROVIDER BADGES ── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      padding: 4px 12px; border-radius: 20px; margin-bottom: 14px;
+    }
+    .badge-aws   { background:#ff9900; color:#111; }
+    .badge-azure { background:#0078d4; color:#fff; }
+    .badge-gcp   { background:#4285f4; color:#fff; }
+
+    /* ── SERVICE TABLE ── */
+    .svc-table { width: 100%; border-collapse: collapse; font-size: .9rem; margin-top: 12px; }
+    .svc-table th {
+      text-align: left; padding: 8px 12px;
+      background: #f0f4ff; font-weight: 600; color: #16213e;
+      border-bottom: 2px solid #d0daf0;
+    }
+    .svc-table td { padding: 8px 12px; border-bottom: 1px solid #edf0f8; vertical-align: top; }
+    .svc-table tr:last-child td { border-bottom: none; }
+    .svc-table tr:hover td { background: #f7f9ff; }
+
+    /* ── PROS / CONS ── */
+    .pc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px; }
+    .pros, .cons { border-radius: 10px; padding: 16px 20px; }
+    .pros { background: #f0fdf4; border: 1px solid #bbf7d0; }
+    .cons { background: #fff7f0; border: 1px solid #fed7aa; }
+    .pros h4 { color: #166534; margin-bottom: 8px; }
+    .cons h4 { color: #9a3412; margin-bottom: 8px; }
+    .pros ul, .cons ul { padding-left: 18px; font-size: .88rem; }
+    .pros li, .cons li { margin-bottom: 5px; }
+
+    /* ── COST TABLE ── */
+    .cost-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    .cost-table th {
+      padding: 10px 16px; text-align: center;
+      background: #1a1a2e; color: #fff; font-weight: 600;
+    }
+    .cost-table th:first-child { text-align: left; }
+    .cost-table td { padding: 9px 16px; border-bottom: 1px solid #e8ecf8; text-align: center; }
+    .cost-table td:first-child { text-align: left; font-weight: 500; }
+    .cost-table tr:hover td { background: #f4f6ff; }
+    .cost-table .total-row td { font-weight: 700; background: #f0f4ff; border-top: 2px solid #c0ccee; }
+    .cost-aws   { color: #c96800; font-weight: 600; }
+    .cost-azure { color: #0061a8; font-weight: 600; }
+    .cost-gcp   { color: #2a6fd4; font-weight: 600; }
+
+    /* ── SVG DIAGRAMS ── */
+    .diagram-wrap {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 2px 16px rgba(0,0,0,.07);
+      padding: 24px;
+      overflow-x: auto;
+      margin-bottom: 28px;
+    }
+    .diagram-wrap svg { display: block; margin: 0 auto; max-width: 100%; }
+
+    /* ── NOTE BOX ── */
+    .note {
+      background: #fffbeb; border: 1px solid #fde68a;
+      border-radius: 8px; padding: 12px 18px;
+      font-size: .88rem; color: #78350f;
+      margin-top: 14px;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center; padding: 28px;
+      font-size: .82rem; color: #888;
+      border-top: 1px solid #e4e8f0;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Architettura N-Tier su Cloud</h1>
+  <p>Confronto implementativo su <strong>AWS</strong>, <strong>Microsoft Azure</strong> e <strong>Google Cloud Platform</strong><br>
+  con servizi consigliati, stima dei costi mensili e analisi punti di forza/debolezza</p>
+</header>
+
+<main>
+
+  <!-- ══════════════════════════════════════════════
+       SEZIONE 1 – ARCHITETTURA DI RIFERIMENTO
+  ══════════════════════════════════════════════ -->
+  <section>
+    <h2>1. Architettura di riferimento</h2>
+    <div class="card">
+      <p>L'architettura analizzata è un'architettura <strong>N-Tier</strong> per un servizio online composta da sei livelli distinti che separano le responsabilità e garantiscono scalabilità, sicurezza e resilienza.</p>
+
+      <!-- SVG – architettura generica -->
+      <div class="diagram-wrap" style="margin-top:20px;">
+        <svg viewBox="0 0 900 200" xmlns="http://www.w3.org/2000/svg" width="900" height="200">
+          <defs>
+            <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="#64748b"/>
+            </marker>
+          </defs>
+
+          <!-- Reverse Proxy -->
+          <rect x="10" y="75" width="120" height="50" rx="12" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+          <text x="70" y="93" text-anchor="middle" font-size="9" fill="#0369a1" font-weight="700">REVERSE PROXY</text>
+          <text x="70" y="109" text-anchor="middle" font-size="11" fill="#0c4a6e">reverse proxy</text>
+
+          <!-- arrow -->
+          <line x1="133" y1="100" x2="163" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <!-- API Gateway -->
+          <rect x="165" y="75" width="130" height="50" rx="12" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="230" y="93" text-anchor="middle" font-size="9" fill="#5b21b6" font-weight="700">API GATEWAY</text>
+          <text x="230" y="109" text-anchor="middle" font-size="11" fill="#2e1065">api gateway</text>
+
+          <!-- arrow -->
+          <line x1="298" y1="100" x2="328" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <!-- Load Balancer -->
+          <rect x="330" y="75" width="130" height="50" rx="12" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
+          <text x="395" y="93" text-anchor="middle" font-size="9" fill="#92400e" font-weight="700">LOAD BALANCER</text>
+          <text x="395" y="109" text-anchor="middle" font-size="11" fill="#713f12">load balancer</text>
+
+          <!-- arrow -->
+          <line x1="463" y1="100" x2="493" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <!-- App Server -->
+          <rect x="495" y="75" width="130" height="50" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="560" y="93" text-anchor="middle" font-size="9" fill="#14532d" font-weight="700">APP SERVER</text>
+          <text x="560" y="109" text-anchor="middle" font-size="11" fill="#14532d">generic service</text>
+
+          <!-- arrows to DB and Cache -->
+          <line x1="628" y1="90" x2="698" y2="50" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="628" y1="110" x2="698" y2="150" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <!-- Cache -->
+          <rect x="700" y="20" width="120" height="50" rx="12" fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
+          <text x="760" y="38" text-anchor="middle" font-size="9" fill="#831843" font-weight="700">CACHE</text>
+          <text x="760" y="54" text-anchor="middle" font-size="11" fill="#831843">redis</text>
+
+          <!-- Database -->
+          <rect x="700" y="130" width="120" height="50" rx="12" fill="#ffedd5" stroke="#ea580c" stroke-width="1.5"/>
+          <text x="760" y="148" text-anchor="middle" font-size="9" fill="#7c2d12" font-weight="700">DATABASE</text>
+          <text x="760" y="164" text-anchor="middle" font-size="11" fill="#7c2d12">relazionale</text>
+        </svg>
+      </div>
+
+      <table class="svc-table">
+        <thead>
+          <tr><th>Livello</th><th>Ruolo</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Reverse Proxy</strong></td><td>Punto d'ingresso pubblico; gestisce TLS termination, CDN, WAF e DDoS protection</td></tr>
+          <tr><td><strong>API Gateway</strong></td><td>Routing, autenticazione, rate limiting, trasformazione richieste e logging centralizzato</td></tr>
+          <tr><td><strong>Load Balancer</strong></td><td>Distribuzione del traffico tra le istanze del servizio applicativo (L4/L7)</td></tr>
+          <tr><td><strong>App Server</strong></td><td>Logica di business del microservizio/REST API (stateless)</td></tr>
+          <tr><td><strong>Database (Oracle / SQL Server / MySQL)</strong></td><td>Persistenza dati relazionali con replica e failover automatico (Oracle su AWS, SQL Server su Azure, MySQL su GCP)</td></tr>
+          <tr><td><strong>Cache (Redis)</strong></td><td>Cache in-memory per ridurre la latenza e il carico sul DB</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       SEZIONE 2 – AWS
+  ══════════════════════════════════════════════ -->
+  <section>
+    <h2>2. Amazon Web Services (AWS)</h2>
+
+    <!-- Diagramma AWS -->
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 960 260" xmlns="http://www.w3.org/2000/svg" width="960" height="260">
+        <defs>
+          <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#ff9900"/>
+          </marker>
+          <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#00000018"/></filter>
+        </defs>
+
+        <!-- Background VPC -->
+        <rect x="8" y="8" width="944" height="244" rx="16" fill="#fffbf0" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="20" y="26" font-size="10" fill="#92400e" font-weight="600">AWS VPC</text>
+
+        <!-- CloudFront -->
+        <rect x="24" y="80" width="130" height="70" rx="10" fill="#fff" stroke="#ff9900" stroke-width="2" filter="url(#sh)"/>
+        <rect x="24" y="80" width="130" height="22" rx="10" fill="#ff9900"/>
+        <rect x="24" y="91" width="130" height="11" fill="#ff9900"/>
+        <text x="89" y="95" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">CloudFront + WAF</text>
+        <text x="89" y="118" text-anchor="middle" font-size="10" fill="#1a1a2e" font-weight="600">Reverse Proxy</text>
+        <text x="89" y="133" text-anchor="middle" font-size="8.5" fill="#555">CDN / DDoS / TLS</text>
+
+        <line x1="157" y1="115" x2="185" y2="115" stroke="#ff9900" stroke-width="2" marker-end="url(#arr2)"/>
+
+        <!-- API Gateway -->
+        <rect x="187" y="80" width="130" height="70" rx="10" fill="#fff" stroke="#ff9900" stroke-width="2" filter="url(#sh)"/>
+        <rect x="187" y="80" width="130" height="22" rx="10" fill="#c05600"/>
+        <rect x="187" y="91" width="130" height="11" fill="#c05600"/>
+        <text x="252" y="95" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">Amazon API Gateway</text>
+        <text x="252" y="118" text-anchor="middle" font-size="10" fill="#1a1a2e" font-weight="600">API Gateway</text>
+        <text x="252" y="133" text-anchor="middle" font-size="8.5" fill="#555">REST / HTTP / WebSocket</text>
+
+        <line x1="320" y1="115" x2="348" y2="115" stroke="#ff9900" stroke-width="2" marker-end="url(#arr2)"/>
+
+        <!-- ALB -->
+        <rect x="350" y="80" width="130" height="70" rx="10" fill="#fff" stroke="#ff9900" stroke-width="2" filter="url(#sh)"/>
+        <rect x="350" y="80" width="130" height="22" rx="10" fill="#e07000"/>
+        <rect x="350" y="91" width="130" height="11" fill="#e07000"/>
+        <text x="415" y="95" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">ALB (L7)</text>
+        <text x="415" y="118" text-anchor="middle" font-size="10" fill="#1a1a2e" font-weight="600">Load Balancer</text>
+        <text x="415" y="133" text-anchor="middle" font-size="8.5" fill="#555">Application LB / NLB</text>
+
+        <line x1="483" y1="115" x2="511" y2="115" stroke="#ff9900" stroke-width="2" marker-end="url(#arr2)"/>
+
+        <!-- ECS/EC2 -->
+        <rect x="513" y="80" width="140" height="70" rx="10" fill="#fff" stroke="#ff9900" stroke-width="2" filter="url(#sh)"/>
+        <rect x="513" y="80" width="140" height="22" rx="10" fill="#007e8a"/>
+        <rect x="513" y="91" width="140" height="11" fill="#007e8a"/>
+        <text x="583" y="95" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">ECS Fargate / EC2</text>
+        <text x="583" y="118" text-anchor="middle" font-size="10" fill="#1a1a2e" font-weight="600">App Server</text>
+        <text x="583" y="133" text-anchor="middle" font-size="8.5" fill="#555">Container / Lambda</text>
+
+        <!-- Arrow to Redis -->
+        <path d="M656,100 Q720,100 720,60 L755,60" stroke="#ff9900" stroke-width="1.8" fill="none" marker-end="url(#arr2)"/>
+        <!-- Arrow to RDS -->
+        <path d="M656,130 Q720,130 720,185 L755,185" stroke="#ff9900" stroke-width="1.8" fill="none" marker-end="url(#arr2)"/>
+
+        <!-- ElastiCache -->
+        <rect x="757" y="30" width="165" height="70" rx="10" fill="#fff" stroke="#ff9900" stroke-width="2" filter="url(#sh)"/>
+        <rect x="757" y="30" width="165" height="22" rx="10" fill="#c7511f"/>
+        <rect x="757" y="41" width="165" height="11" fill="#c7511f"/>
+        <text x="839" y="45" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">ElastiCache for Redis</text>
+        <text x="839" y="68" text-anchor="middle" font-size="10" fill="#1a1a2e" font-weight="600">Cache Server</text>
+        <text x="839" y="83" text-anchor="middle" font-size="8.5" fill="#555">Cluster Mode / Multi-AZ</text>
+
+        <!-- RDS -->
+        <rect x="757" y="155" width="165" height="70" rx="10" fill="#fff" stroke="#ff9900" stroke-width="2" filter="url(#sh)"/>
+        <rect x="757" y="155" width="165" height="22" rx="10" fill="#1d5a8e"/>
+        <rect x="757" y="166" width="165" height="11" fill="#1d5a8e"/>
+        <text x="839" y="170" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">Amazon RDS for Oracle</text>
+        <text x="839" y="193" text-anchor="middle" font-size="10" fill="#1a1a2e" font-weight="600">Database Oracle</text>
+        <text x="839" y="208" text-anchor="middle" font-size="8.5" fill="#555">Multi-AZ / SE2 / EE / BYOL</text>
+      </svg>
+    </div>
+
+    <div class="card">
+      <span class="badge badge-aws">&#x2601; Amazon Web Services</span>
+      <table class="svc-table">
+        <thead><tr><th>Livello N-Tier</th><th>Servizio AWS</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>Reverse Proxy</td><td><strong>Amazon CloudFront</strong> + AWS WAF + AWS Shield</td><td>CDN globale, protezione DDoS, TLS termination, caching edge</td></tr>
+          <tr><td>API Gateway</td><td><strong>Amazon API Gateway</strong> (HTTP API o REST API)</td><td>Rate limiting, JWT/Cognito auth, Lambda authorizer, usage plans</td></tr>
+          <tr><td>Load Balancer</td><td><strong>Application Load Balancer (ALB)</strong></td><td>Routing path/host-based, sticky sessions, target groups, health check</td></tr>
+          <tr><td>App Server</td><td><strong>Amazon ECS Fargate</strong> / EC2 Auto Scaling / Lambda</td><td>Container serverless con auto-scaling; alternativa: EKS (Kubernetes)</td></tr>
+          <tr><td>Database</td><td><strong>Amazon RDS for Oracle</strong></td><td>Supporto Oracle SE2 (License Included o BYOL) e Oracle EE (solo BYOL); Multi-AZ con standby sincrono, automated backups, read replica, Oracle Data Guard integrato; compatibilità nativa PL/SQL, stored procedure e Oracle-specific features</td></tr>
+          <tr><td>Cache</td><td><strong>Amazon ElastiCache for Redis</strong></td><td>Cluster Mode, Multi-AZ, encryption at rest/in transit</td></tr>
+        </tbody>
+      </table>
+      <div class="note">&#128204; Servizi complementari consigliati: <strong>AWS Secrets Manager</strong> (gestione credenziali), <strong>Amazon Route 53</strong> (DNS), <strong>AWS Certificate Manager</strong> (certificati TLS gratuiti), <strong>Amazon CloudWatch</strong> (monitoring), <strong>AWS X-Ray</strong> (tracing distribuito).</div>
+
+      <h3>Stima costi mensili (carico medio: ~1000 req/s, 2 AZ)</h3>
+      <table class="svc-table">
+        <thead><tr><th>Servizio</th><th>Configurazione</th><th>Costo stimato/mese</th></tr></thead>
+        <tbody>
+          <tr><td>CloudFront + WAF</td><td>1 TB transfer out, 10M req</td><td>~$60–90</td></tr>
+          <tr><td>API Gateway (HTTP API)</td><td>30M richieste</td><td>~$30–50</td></tr>
+          <tr><td>ALB</td><td>2 istanze, LCU medio</td><td>~$30–45</td></tr>
+          <tr><td>ECS Fargate</td><td>4 task × 1vCPU / 2GB RAM</td><td>~$120–180</td></tr>
+          <tr><td>RDS Oracle SE2 – License Included (db.m5.large)</td><td>Multi-AZ, 100 GB SSD</td><td>~$350–500</td></tr>
+          <tr><td>RDS Oracle SE2 – BYOL (db.m5.large)</td><td>Multi-AZ, 100 GB SSD</td><td>~$150–200 <em style="color:#888">(+ costo lic. Oracle)</em></td></tr>
+          <tr><td>ElastiCache Redis (cache.t3.medium)</td><td>2 nodi cluster</td><td>~$70–100</td></tr>
+          <tr><td>Data transfer, monitoring, misc</td><td>–</td><td>~$40–60</td></tr>
+        </tbody>
+      </table>
+      <div class="note">&#128204; <strong>Licensing Oracle su RDS:</strong> la modalità <em>License Included</em> (SE2) include la licenza Oracle nel prezzo orario AWS e non richiede contratti Oracle separati; la modalità <em>BYOL</em> (Bring Your Own License) consente di usare licenze Oracle già possedute e riduce il costo cloud, ma richiede la gestione del contratto di supporto Oracle separatamente.</div>
+      <p style="margin-top:10px; font-weight:600; color:#c96800;">💰 Totale stimato: $650 – $975 / mese (License Included) &nbsp;|&nbsp; $450 – $635 / mese (BYOL)</p>
+
+      <div class="pc-grid" style="margin-top:18px;">
+        <div class="pros">
+          <h4>✅ Punti di Forza</h4>
+          <ul>
+            <li>Ecosistema più maturo e ampio del mercato (200+ servizi)</li>
+            <li>CloudFront ha la rete edge più capillare (600+ PoP)</li>
+            <li>RDS for Oracle supporta Oracle SE2 ed EE con compatibilità nativa PL/SQL, procedure e trigger Oracle</li>
+            <li>Modalità BYOL permette di riutilizzare licenze Oracle esistenti, abbattendo il costo cloud</li>
+            <li>Oracle Data Guard Multi-AZ garantisce failover automatico e sincrono</li>
+            <li>Fargate elimina la gestione del cluster EC2</li>
+            <li>Documentazione eccellente e community vastissima</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>⚠️ Punti di Debolezza</h4>
+          <ul>
+            <li>Costo elevato in modalità License Included (SE2 su db.m5.large Multi-AZ ~$350–500/mese)</li>
+            <li>Licenze Oracle EE supportate solo in modalità BYOL, con complessità contrattuale</li>
+            <li>Curva di apprendimento ripida: molte opzioni e servizi</li>
+            <li>API Gateway REST ha latenza aggiuntiva percepibile</li>
+            <li>ElastiCache non ha tier serverless (provisioning sempre richiesto)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       SEZIONE 3 – MICROSOFT AZURE
+  ══════════════════════════════════════════════ -->
+  <section>
+    <h2>3. Microsoft Azure</h2>
+
+    <!-- Diagramma Azure -->
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 960 260" xmlns="http://www.w3.org/2000/svg" width="960" height="260">
+        <defs>
+          <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#0078d4"/>
+          </marker>
+          <filter id="sh3"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#00000018"/></filter>
+        </defs>
+
+        <!-- Background -->
+        <rect x="8" y="8" width="944" height="244" rx="16" fill="#f0f8ff" stroke="#0078d4" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="20" y="26" font-size="10" fill="#00538a" font-weight="600">Azure Virtual Network (VNet)</text>
+
+        <!-- Front Door -->
+        <rect x="24" y="80" width="135" height="70" rx="10" fill="#fff" stroke="#0078d4" stroke-width="2" filter="url(#sh3)"/>
+        <rect x="24" y="80" width="135" height="22" rx="10" fill="#0078d4"/>
+        <rect x="24" y="91" width="135" height="11" fill="#0078d4"/>
+        <text x="91" y="95" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">Azure Front Door</text>
+        <text x="91" y="118" text-anchor="middle" font-size="10" fill="#1a1a2e" font-weight="600">Reverse Proxy</text>
+        <text x="91" y="133" text-anchor="middle" font-size="8.5" fill="#555">CDN + WAF + DDoS Std</text>
+
+        <line x1="162" y1="115" x2="190" y2="115" stroke="#0078d4" stroke-width="2" marker-end="url(#arr3)"/>
+
+        <!-- APIM -->
+        <rect x="192" y="80" width="130" height="70" rx="10" fill="#fff" stroke="#0078d4" stroke-width="2" filter="url(#sh3)"/>
+        <rect x="192" y="80" width="130" height="22" rx="10" fill="#004e8c"/>
+        <rect x="192" y="91" width="130" height="11" fill="#004e8c"/>
+        <text x="257" y="95" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">Azure API Management</text>
+        <text x="257" y="118" text-anchor="middle" font-size="10" fill="#1a1a2e" font-weight="600">API Gateway</text>
+        <text x="257" y="133" text-anchor="middle" font-size="8.5" fill="#555">Policies / OAuth2 / Portal</text>
+
+        <line x1="325" y1="115" x2="353" y2="115" stroke="#0078d4" stroke-width="2" marker-end="url(#arr3)"/>
+
+        <!-- App Gateway -->
+        <rect x="355" y="80" width="135" height="70" rx="10" fill="#fff" stroke="#0078d4" stroke-width="2" filter="url(#sh3)"/>
+        <rect x="355" y="80" width="135" height="22" rx="10" fill="#005b9f"/>
+        <rect x="355" y="91" width="135" height="11" fill="#005b9f"/>
+        <text x="422" y="95" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">Application Gateway v2</text>
+        <text x="422" y="118" text-anchor="middle" font-size="10" fill="#1a1a2e" font-weight="600">Load Balancer L7</text>
+        <text x="422" y="133" text-anchor="middle" font-size="8.5" fill="#555">WAF integrato / Autoscale</text>
+
+        <line x1="493" y1="115" x2="521" y2="115" stroke="#0078d4" stroke-width="2" marker-end="url(#arr3)"/>
+
+        <!-- AKS / Container Apps -->
+        <rect x="523" y="80" width="140" height="70" rx="10" fill="#fff" stroke="#0078d4" stroke-width="2" filter="url(#sh3)"/>
+        <rect x="523" y="80" width="140" height="22" rx="10" fill="#006ab1"/>
+        <rect x="523" y="91" width="140" height="11" fill="#006ab1"/>
+        <text x="593" y="95" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">Container Apps / AKS</text>
+        <text x="593" y="118" text-anchor="middle" font-size="10" fill="#1a1a2e" font-weight="600">App Server</text>
+        <text x="593" y="133" text-anchor="middle" font-size="8.5" fill="#555">Serverless containers / K8s</text>
+
+        <path d="M666,100 Q725,100 725,58 L757,58" stroke="#0078d4" stroke-width="1.8" fill="none" marker-end="url(#arr3)"/>
+        <path d="M666,130 Q725,130 725,188 L757,188" stroke="#0078d4" stroke-width="1.8" fill="none" marker-end="url(#arr3)"/>
+
+        <!-- Azure Cache for Redis -->
+        <rect x="759" y="30" width="165" height="70" rx="10" fill="#fff" stroke="#0078d4" stroke-width="2" filter="url(#sh3)"/>
+        <rect x="759" y="30" width="165" height="22" rx="10" fill="#881798"/>
+        <rect x="759" y="41" width="165" height="11" fill="#881798"/>
+        <text x="841" y="45" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">Azure Cache for Redis</text>
+        <text x="841" y="68" text-anchor="middle" font-size="10" fill="#1a1a2e" font-weight="600">Cache Server</text>
+        <text x="841" y="83" text-anchor="middle" font-size="8.5" fill="#555">Standard/Premium / Geo-rep</text>
+
+        <!-- Azure SQL Database -->
+        <rect x="759" y="158" width="165" height="70" rx="10" fill="#fff" stroke="#0078d4" stroke-width="2" filter="url(#sh3)"/>
+        <rect x="759" y="158" width="165" height="22" rx="10" fill="#0f6cbd"/>
+        <rect x="759" y="169" width="165" height="11" fill="#0f6cbd"/>
+        <text x="841" y="173" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">Azure SQL Database</text>
+        <text x="841" y="196" text-anchor="middle" font-size="10" fill="#1a1a2e" font-weight="600">Database SQL Server</text>
+        <text x="841" y="211" text-anchor="middle" font-size="8.5" fill="#555">General Purpose / Bus. Crit.</text>
+      </svg>
+    </div>
+
+    <div class="card">
+      <span class="badge badge-azure">&#x2601; Microsoft Azure</span>
+      <table class="svc-table">
+        <thead><tr><th>Livello N-Tier</th><th>Servizio Azure</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>Reverse Proxy</td><td><strong>Azure Front Door</strong> (Standard/Premium) + Azure WAF</td><td>Anycast globale, SSL offload, routing basato su latenza, DDoS Protection Standard</td></tr>
+          <tr><td>API Gateway</td><td><strong>Azure API Management (APIM)</strong></td><td>Developer Portal integrato, policy engine potente, subscription keys, OAuth2/OIDC</td></tr>
+          <tr><td>Load Balancer</td><td><strong>Azure Application Gateway v2</strong></td><td>WAF integrato (OWASP), autoscale, SSL termination, Cookie-based affinity</td></tr>
+          <tr><td>App Server</td><td><strong>Azure Container Apps</strong> / AKS / App Service</td><td>Container Apps per serverless (KEDA scaling); AKS per K8s gestito</td></tr>
+          <tr><td>Database</td><td><strong>Azure SQL Database</strong> (SQL Server managed)</td><td>HA automatico, PITR, elastic pool, opzione serverless; supporto T-SQL completo; Azure Hybrid Benefit riduce i costi con licenze SQL Server esistenti</td></tr>
+          <tr><td>Cache</td><td><strong>Azure Cache for Redis</strong></td><td>Tier Basic/Standard/Premium; geo-replica e clustering nel tier Premium</td></tr>
+        </tbody>
+      </table>
+      <div class="note">&#128204; Servizi complementari consigliati: <strong>Azure Key Vault</strong> (segreti/certificati), <strong>Azure DNS</strong>, <strong>Azure Monitor + Log Analytics</strong>, <strong>Application Insights</strong> (APM), <strong>Microsoft Entra ID</strong> (identità), <strong>Azure Defender</strong> (sicurezza).</div>
+
+      <h3>Stima costi mensili (carico medio: ~1000 req/s, 2 zone)</h3>
+      <table class="svc-table">
+        <thead><tr><th>Servizio</th><th>Configurazione</th><th>Costo stimato/mese</th></tr></thead>
+        <tbody>
+          <tr><td>Azure Front Door Standard + WAF</td><td>1 TB transfer, 10M req</td><td>~$65–100</td></tr>
+          <tr><td>APIM (Developer tier)</td><td>1 unit — solo dev/test</td><td>~$50</td></tr>
+          <tr><td>APIM (Standard tier)</td><td>1 unit — produzione</td><td>~$700</td></tr>
+          <tr><td>Application Gateway v2</td><td>Small, 2 capacity unit</td><td>~$45–65</td></tr>
+          <tr><td>Container Apps</td><td>4 replica, 1 vCPU / 2GB</td><td>~$110–160</td></tr>
+          <tr><td>Azure SQL Database (General Purpose, 2 vCore)</td><td>HA, 100 GB SSD</td><td>~$125–160</td></tr>
+          <tr><td>Azure Cache for Redis (C1 Standard)</td><td>2 nodi</td><td>~$75–100</td></tr>
+          <tr><td>Monitoring, networking, misc</td><td>–</td><td>~$40–60</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:10px; font-weight:600; color:#0061a8;">💰 Totale stimato: $510 – $645 / mese (Developer APIM) oppure $1.155 – $1.345 / mese (Standard APIM)</p>
+
+      <div class="pc-grid" style="margin-top:18px;">
+        <div class="pros">
+          <h4>✅ Punti di Forza</h4>
+          <ul>
+            <li>Integrazione nativa con ecosistema Microsoft (Active Directory, Office 365)</li>
+            <li>APIM tra i più completi: developer portal, mock, test integrato</li>
+            <li>Azure Container Apps: autoscaling KEDA su eventi (code, HTTP, cron)</li>
+            <li>Azure SQL Database: motore SQL Server completamente gestito, con T-SQL nativo e compatibilità piena con applicazioni .NET/enterprise</li>
+            <li>Ottimo per aziende già nel mondo Microsoft/Enterprise</li>
+            <li>Azure Hybrid Benefit riduce sensibilmente i costi per chi ha già licenze SQL Server</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>⚠️ Punti di Debolezza</h4>
+          <ul>
+            <li>APIM Standard tier molto costoso (~$700/mese per unità)</li>
+            <li>Naming e navigazione del portale spesso confusi</li>
+            <li>Documentazione a volte frammentata o datata</li>
+            <li>Disponibilità regionale inferiore a AWS in alcune aree</li>
+            <li>Application Gateway non è un CDN (dipende da Front Door per edge)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       SEZIONE 4 – GOOGLE CLOUD PLATFORM
+  ══════════════════════════════════════════════ -->
+  <section>
+    <h2>4. Google Cloud Platform (GCP)</h2>
+
+    <!-- Diagramma GCP -->
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 960 260" xmlns="http://www.w3.org/2000/svg" width="960" height="260">
+        <defs>
+          <marker id="arr4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#4285f4"/>
+          </marker>
+          <filter id="sh4"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#00000018"/></filter>
+        </defs>
+
+        <!-- Background -->
+        <rect x="8" y="8" width="944" height="244" rx="16" fill="#f0f4ff" stroke="#4285f4" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="20" y="26" font-size="10" fill="#1a3aa0" font-weight="600">Google Cloud VPC</text>
+
+        <!-- Cloud CDN + Armor -->
+        <rect x="24" y="80" width="135" height="70" rx="10" fill="#fff" stroke="#4285f4" stroke-width="2" filter="url(#sh4)"/>
+        <rect x="24" y="80" width="135" height="22" rx="10" fill="#4285f4"/>
+        <rect x="24" y="91" width="135" height="11" fill="#4285f4"/>
+        <text x="91" y="95" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">Cloud CDN + Cloud Armor</text>
+        <text x="91" y="118" text-anchor="middle" font-size="10" fill="#1a1a2e" font-weight="600">Reverse Proxy</text>
+        <text x="91" y="133" text-anchor="middle" font-size="8.5" fill="#555">Edge caching / WAF / DDoS</text>
+
+        <line x1="162" y1="115" x2="190" y2="115" stroke="#4285f4" stroke-width="2" marker-end="url(#arr4)"/>
+
+        <!-- Apigee -->
+        <rect x="192" y="80" width="130" height="70" rx="10" fill="#fff" stroke="#4285f4" stroke-width="2" filter="url(#sh4)"/>
+        <rect x="192" y="80" width="130" height="22" rx="10" fill="#1a73e8"/>
+        <rect x="192" y="91" width="130" height="11" fill="#1a73e8"/>
+        <text x="257" y="95" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">Apigee API Management</text>
+        <text x="257" y="118" text-anchor="middle" font-size="10" fill="#1a1a2e" font-weight="600">API Gateway</text>
+        <text x="257" y="133" text-anchor="middle" font-size="8.5" fill="#555">Analytics / Rate limit / OAuth</text>
+
+        <line x1="325" y1="115" x2="353" y2="115" stroke="#4285f4" stroke-width="2" marker-end="url(#arr4)"/>
+
+        <!-- Cloud LB -->
+        <rect x="355" y="80" width="135" height="70" rx="10" fill="#fff" stroke="#4285f4" stroke-width="2" filter="url(#sh4)"/>
+        <rect x="355" y="80" width="135" height="22" rx="10" fill="#0d47a1"/>
+        <rect x="355" y="91" width="135" height="11" fill="#0d47a1"/>
+        <text x="422" y="95" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">Cloud Load Balancing</text>
+        <text x="422" y="118" text-anchor="middle" font-size="10" fill="#1a1a2e" font-weight="600">Load Balancer</text>
+        <text x="422" y="133" text-anchor="middle" font-size="8.5" fill="#555">Global HTTP(S) LB / Anycast</text>
+
+        <line x1="493" y1="115" x2="521" y2="115" stroke="#4285f4" stroke-width="2" marker-end="url(#arr4)"/>
+
+        <!-- Cloud Run -->
+        <rect x="523" y="80" width="140" height="70" rx="10" fill="#fff" stroke="#4285f4" stroke-width="2" filter="url(#sh4)"/>
+        <rect x="523" y="80" width="140" height="22" rx="10" fill="#1565c0"/>
+        <rect x="523" y="91" width="140" height="11" fill="#1565c0"/>
+        <text x="593" y="95" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">Cloud Run / GKE</text>
+        <text x="593" y="118" text-anchor="middle" font-size="10" fill="#1a1a2e" font-weight="600">App Server</text>
+        <text x="593" y="133" text-anchor="middle" font-size="8.5" fill="#555">Serverless containers / K8s</text>
+
+        <path d="M666,100 Q725,100 725,58 L757,58" stroke="#4285f4" stroke-width="1.8" fill="none" marker-end="url(#arr4)"/>
+        <path d="M666,130 Q725,130 725,188 L757,188" stroke="#4285f4" stroke-width="1.8" fill="none" marker-end="url(#arr4)"/>
+
+        <!-- Memorystore -->
+        <rect x="759" y="30" width="165" height="70" rx="10" fill="#fff" stroke="#4285f4" stroke-width="2" filter="url(#sh4)"/>
+        <rect x="759" y="30" width="165" height="22" rx="10" fill="#e91e63"/>
+        <rect x="759" y="41" width="165" height="11" fill="#e91e63"/>
+        <text x="841" y="45" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">Memorystore for Redis</text>
+        <text x="841" y="68" text-anchor="middle" font-size="10" fill="#1a1a2e" font-weight="600">Cache Server</text>
+        <text x="841" y="83" text-anchor="middle" font-size="8.5" fill="#555">Basic / Standard / HA</text>
+
+        <!-- Cloud SQL for MySQL -->
+        <rect x="759" y="158" width="165" height="70" rx="10" fill="#fff" stroke="#4285f4" stroke-width="2" filter="url(#sh4)"/>
+        <rect x="759" y="158" width="165" height="22" rx="10" fill="#0077cc"/>
+        <rect x="759" y="169" width="165" height="11" fill="#0077cc"/>
+        <text x="841" y="173" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">Cloud SQL for MySQL</text>
+        <text x="841" y="196" text-anchor="middle" font-size="10" fill="#1a1a2e" font-weight="600">Database MySQL</text>
+        <text x="841" y="211" text-anchor="middle" font-size="8.5" fill="#555">HA / Read Replica / PITR</text>
+      </svg>
+    </div>
+
+    <div class="card">
+      <span class="badge badge-gcp">&#x2601; Google Cloud Platform</span>
+      <table class="svc-table">
+        <thead><tr><th>Livello N-Tier</th><th>Servizio GCP</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>Reverse Proxy</td><td><strong>Cloud CDN</strong> + <strong>Cloud Armor</strong> + Google Cloud Load Balancing</td><td>Edge globale sulla rete Google, WAF managed rules, protezione DDoS adattiva</td></tr>
+          <tr><td>API Gateway</td><td><strong>Apigee API Management</strong> (o Cloud Endpoints per API leggere)</td><td>Analytics avanzate, monetizzazione API, developer portal, hybrid/multi-cloud</td></tr>
+          <tr><td>Load Balancer</td><td><strong>Cloud Load Balancing HTTP(S)</strong> (Global)</td><td>Anycast nativo, autoscale backend, SSL policy, Cloud Armor integrato</td></tr>
+          <tr><td>App Server</td><td><strong>Cloud Run</strong> / GKE Autopilot / Compute Engine MIG</td><td>Cloud Run: serverless container con cold start &lt;1s; GKE Autopilot: K8s gestito</td></tr>
+          <tr><td>Database</td><td><strong>Cloud SQL for MySQL</strong></td><td>HA automatico, Read Replica, PITR, supporto MySQL 8.0+; VPC nativo, backup gestiti, manutenzione automatica</td></tr>
+          <tr><td>Cache</td><td><strong>Memorystore for Redis</strong></td><td>Tier Basic e Standard (con replica); supporto Redis 6/7, TLS, VPC nativo</td></tr>
+        </tbody>
+      </table>
+      <div class="note">&#128204; Servizi complementari consigliati: <strong>Secret Manager</strong>, <strong>Cloud DNS</strong>, <strong>Cloud Monitoring + Cloud Logging</strong>, <strong>Cloud Trace</strong> (tracing), <strong>Identity Platform</strong> (autenticazione), <strong>Cloud IAP</strong> (accesso sicuro).</div>
+
+      <h3>Stima costi mensili (carico medio: ~1000 req/s, 2 zone)</h3>
+      <table class="svc-table">
+        <thead><tr><th>Servizio</th><th>Configurazione</th><th>Costo stimato/mese</th></tr></thead>
+        <tbody>
+          <tr><td>Cloud CDN + Cloud Armor</td><td>1 TB, 10M req, policy base</td><td>~$50–80</td></tr>
+          <tr><td>Apigee X (Pay-as-you-go)</td><td>30M API call/mese</td><td>~$60–120</td></tr>
+          <tr><td>Cloud Load Balancing</td><td>Global HTTPS, 1 TB</td><td>~$25–45</td></tr>
+          <tr><td>Cloud Run</td><td>4 istanze, 1 vCPU / 2GB</td><td>~$90–140</td></tr>
+          <tr><td>Cloud SQL MySQL (db-standard-2)</td><td>HA, 100 GB SSD</td><td>~$110–145</td></tr>
+          <tr><td>Memorystore Redis (Standard 5 GB)</td><td>2 nodi replica</td><td>~$60–90</td></tr>
+          <tr><td>Networking, monitoring, misc</td><td>–</td><td>~$35–55</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:10px; font-weight:600; color:#2a6fd4;">💰 Totale stimato: $430 – $675 / mese</p>
+
+      <div class="pc-grid" style="margin-top:18px;">
+        <div class="pros">
+          <h4>✅ Punti di Forza</h4>
+          <ul>
+            <li>Rete privata globale Google: latenza e affidabilità eccellenti</li>
+            <li>Cloud Run: il serverless container più maturo del mercato</li>
+            <li>Cloud SQL for MySQL: pienamente gestito, compatibile MySQL 8.0, integrazione nativa con VPC e IAM</li>
+            <li>GKE è il Kubernetes gestito di riferimento (Google ha inventato K8s)</li>
+            <li>Cloud Load Balancing è globale e anycast per default</li>
+            <li>Prezzi generalmente più bassi di AWS su compute e storage</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>⚠️ Punti di Debolezza</h4>
+          <ul>
+            <li>Apigee molto costoso rispetto ad alternative (richiede progetto separato)</li>
+            <li>Ecosistema enterprise meno maturo rispetto ad AWS/Azure</li>
+            <li>Supporto enterprise percepito come meno reattivo</li>
+            <li>Memorystore non supporta tutti i moduli Redis enterprise</li>
+            <li>Meno servizi managed "niche" rispetto all'ecosistema AWS</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       SEZIONE 5 – CONFRONTO RIEPILOGATIVO
+  ══════════════════════════════════════════════ -->
+  <section>
+    <h2>5. Confronto riepilogativo</h2>
+
+    <div class="card">
+      <h3>Tabella comparativa dei servizi per livello</h3>
+      <table class="svc-table" style="margin-top:12px;">
+        <thead>
+          <tr>
+            <th>Livello N-Tier</th>
+            <th>AWS</th>
+            <th>Microsoft Azure</th>
+            <th>Google Cloud</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Reverse Proxy / CDN</strong></td>
+            <td>CloudFront + WAF + Shield</td>
+            <td>Azure Front Door + WAF</td>
+            <td>Cloud CDN + Cloud Armor</td>
+          </tr>
+          <tr>
+            <td><strong>API Gateway</strong></td>
+            <td>Amazon API Gateway</td>
+            <td>Azure API Management</td>
+            <td>Apigee / Cloud Endpoints</td>
+          </tr>
+          <tr>
+            <td><strong>Load Balancer</strong></td>
+            <td>Application Load Balancer</td>
+            <td>Application Gateway v2</td>
+            <td>Cloud Load Balancing (Global)</td>
+          </tr>
+          <tr>
+            <td><strong>App Server (container)</strong></td>
+            <td>ECS Fargate / EKS</td>
+            <td>Container Apps / AKS</td>
+            <td>Cloud Run / GKE Autopilot</td>
+          </tr>
+          <tr>
+            <td><strong>Database relazionale</strong></td>
+            <td>RDS for Oracle (SE2 / EE)</td>
+            <td>Azure SQL Database (SQL Server)</td>
+            <td>Cloud SQL for MySQL</td>
+          </tr>
+          <tr>
+            <td><strong>Cache Redis</strong></td>
+            <td>ElastiCache for Redis</td>
+            <td>Azure Cache for Redis</td>
+            <td>Memorystore for Redis</td>
+          </tr>
+          <tr>
+            <td><strong>Secrets / Config</strong></td>
+            <td>Secrets Manager / SSM</td>
+            <td>Azure Key Vault</td>
+            <td>Secret Manager</td>
+          </tr>
+          <tr>
+            <td><strong>Monitoring / APM</strong></td>
+            <td>CloudWatch + X-Ray</td>
+            <td>Azure Monitor + App Insights</td>
+            <td>Cloud Monitoring + Trace</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Stima costi mensili – confronto (carico medio)</h3>
+      <table class="cost-table">
+        <thead>
+          <tr>
+            <th>Voce di costo</th>
+            <th style="color:#ff9900;">AWS</th>
+            <th style="color:#50b0f0;">Azure</th>
+            <th style="color:#7baaf7;">GCP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>CDN / Reverse Proxy</td>
+            <td class="cost-aws">$60–90</td>
+            <td class="cost-azure">$65–100</td>
+            <td class="cost-gcp">$50–80</td>
+          </tr>
+          <tr>
+            <td>API Gateway</td>
+            <td class="cost-aws">$30–50</td>
+            <td class="cost-azure">$50–700*</td>
+            <td class="cost-gcp">$60–120</td>
+          </tr>
+          <tr>
+            <td>Load Balancer</td>
+            <td class="cost-aws">$30–45</td>
+            <td class="cost-azure">$45–65</td>
+            <td class="cost-gcp">$25–45</td>
+          </tr>
+          <tr>
+            <td>App Server (containers)</td>
+            <td class="cost-aws">$120–180</td>
+            <td class="cost-azure">$110–160</td>
+            <td class="cost-gcp">$90–140</td>
+          </tr>
+          <tr>
+            <td>Database (Oracle / SQL Server / MySQL)</td>
+            <td class="cost-aws">$350–500 <small style="font-weight:400">(Lic. Incl.)</small></td>
+            <td class="cost-azure">$125–160</td>
+            <td class="cost-gcp">$110–145</td>
+          </tr>
+          <tr>
+            <td>Cache Redis</td>
+            <td class="cost-aws">$70–100</td>
+            <td class="cost-azure">$75–100</td>
+            <td class="cost-gcp">$60–90</td>
+          </tr>
+          <tr>
+            <td>Networking / Misc</td>
+            <td class="cost-aws">$40–60</td>
+            <td class="cost-azure">$40–60</td>
+            <td class="cost-gcp">$35–55</td>
+          </tr>
+          <tr class="total-row">
+            <td>TOTALE STIMATO / mese</td>
+            <td class="cost-aws">$650 – $975 <small style="font-weight:400">(Lic. Incl.)</small><br><span style="font-size:.82rem; color:#888">$450–$635 con BYOL</span></td>
+            <td class="cost-azure">$510 – $1.345*</td>
+            <td class="cost-gcp">$430 – $675</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note">* Azure APIM: Developer tier ~$50/mese (solo sviluppo/test, SLA assente); Standard tier ~$700/mese (produzione). Per produzione la voce APIM sale notevolmente.<br>** AWS Oracle: in modalità BYOL il costo RDS scende a ~$150–200/mese, ma richiede licenze Oracle preesistenti e contratto di supporto Oracle separato.</div>
+    </div>
+
+    <div class="card">
+      <h3>Grafico radar comparativo</h3>
+
+      <!-- SVG Radar Chart -->
+      <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:16px; margin-top:16px;">
+        <svg viewBox="0 0 480 420" xmlns="http://www.w3.org/2000/svg" width="480" height="420">
+          <defs>
+            <style>
+              .radar-label { font-size: 11px; fill: #334155; font-weight: 600; }
+              .radar-sublabel { font-size: 9px; fill: #64748b; }
+            </style>
+          </defs>
+
+          <!-- Title -->
+          <text x="240" y="24" text-anchor="middle" font-size="13" fill="#1a1a2e" font-weight="700">Radar: AWS vs Azure vs GCP</text>
+          <text x="240" y="40" text-anchor="middle" font-size="10" fill="#64748b">(scala 1–10 per dimensione)</text>
+
+          <!-- Center -->
+          <!-- Grid circles -->
+          <circle cx="240" cy="220" r="140" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+          <circle cx="240" cy="220" r="112" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+          <circle cx="240" cy="220" r="84" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+          <circle cx="240" cy="220" r="56" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+          <circle cx="240" cy="220" r="28" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+
+          <!-- Axes (6 axes: Ecosistema, Costo, Performance, Facilità, Sicurezza, Supporto) -->
+          <!-- 0°: top -->
+          <line x1="240" y1="80" x2="240" y2="360" stroke="#cbd5e1" stroke-width="1"/>
+          <!-- 60° -->
+          <line x1="240" y1="220" x2="361" y2="150" stroke="#cbd5e1" stroke-width="1"/>
+          <line x1="240" y1="220" x2="119" y2="150" stroke="#cbd5e1" stroke-width="1"/>
+          <!-- 120° -->
+          <line x1="240" y1="220" x2="361" y2="290" stroke="#cbd5e1" stroke-width="1"/>
+          <line x1="240" y1="220" x2="119" y2="290" stroke="#cbd5e1" stroke-width="1"/>
+
+          <!-- Labels -->
+          <text x="240" y="70" text-anchor="middle" class="radar-label">Ecosistema</text>
+          <text x="240" y="80" text-anchor="middle" class="radar-sublabel">servizi disponibili</text>
+
+          <text x="385" y="148" text-anchor="start" class="radar-label">Sicurezza</text>
+          <text x="385" y="158" text-anchor="start" class="radar-sublabel">WAF/Compliance</text>
+
+          <text x="385" y="296" text-anchor="start" class="radar-label">Supporto</text>
+          <text x="385" y="306" text-anchor="start" class="radar-sublabel">Enterprise SLA</text>
+
+          <text x="240" y="378" text-anchor="middle" class="radar-label">Costo</text>
+          <text x="240" y="390" text-anchor="middle" class="radar-sublabel">prezzo/performance</text>
+
+          <text x="95" y="306" text-anchor="end" class="radar-label">Performance</text>
+          <text x="95" y="316" text-anchor="end" class="radar-sublabel">latenza/velocità</text>
+
+          <text x="95" y="148" text-anchor="end" class="radar-label">Facilità</text>
+          <text x="95" y="158" text-anchor="end" class="radar-sublabel">setup/gestione</text>
+
+          <!--
+            Axes angles: top=270°, top-right=330°, bottom-right=30°, bottom=90°, bottom-left=150°, top-left=210°
+            Scores (out of 10):
+            AWS:   Ecosistema=9.5, Sicurezza=9, Supporto=8.5, Costo=6.5, Performance=8.5, Facilità=7
+            Azure: Ecosistema=8.5, Sicurezza=9.5, Supporto=9, Costo=6, Performance=8, Facilità=7.5
+            GCP:   Ecosistema=8, Sicurezza=8.5, Supporto=7, Costo=8.5, Performance=9, Facilità=8
+            Scale: score/10 * 140 = radius
+            top (Ecosistema): angle -90° → (cx, cy-r)
+            top-right (Sicurezza): angle -30° → (cx+r*cos(-30), cy+r*sin(-30))
+            bottom-right (Supporto): angle 30° → (cx+r*cos(30), cy+r*sin(30))
+            bottom (Costo): angle 90° → (cx, cy+r)
+            bottom-left (Performance): angle 150° → (cx+r*cos(150), cy+r*sin(150))
+            top-left (Facilità): angle 210° → (cx+r*cos(210), cy+r*sin(210))
+          -->
+
+          <!-- AWS polygon -->
+          <!-- Eco=9.5→r=133, Sic=9→r=126, Sup=8.5→r=119, Cos=6.5→r=91, Perf=8.5→r=119, Fac=7→r=98 -->
+          <polygon
+            points="240,87 349,157 349,283 240,311 153,283 153,157"
+            fill="none" stroke="#e2e8f0" stroke-width="1" opacity="0"/>
+          <!-- AWS -->
+          <polygon
+            points="240,87 362,152 362,289 240,311 137,289 152,161"
+            fill="#ff990033" stroke="#ff9900" stroke-width="2" opacity="0.85"/>
+          <!-- Azure -->
+          <polygon
+            points="240,101 367,157 368,293 240,318 143,289 158,158"
+            fill="#0078d433" stroke="#0078d4" stroke-width="2" opacity="0.85"/>
+          <!-- GCP -->
+          <polygon
+            points="240,108 358,154 349,280 240,301 137,280 157,154"
+            fill="#cc000033" stroke="#cc0000" stroke-width="2" opacity="0.85"/>
+
+          <!-- Legend -->
+          <rect x="60" y="400" width="14" height="8" fill="#ff9900" rx="2"/>
+          <text x="80" y="408" font-size="10" fill="#1a1a2e">AWS</text>
+          <rect x="140" y="400" width="14" height="8" fill="#0078d4" rx="2"/>
+          <text x="160" y="408" font-size="10" fill="#1a1a2e">Azure</text>
+          <rect x="225" y="400" width="14" height="8" fill="#cc0000" rx="2"/>
+          <text x="245" y="408" font-size="10" fill="#1a1a2e">GCP</text>
+        </svg>
+
+        <!-- Score table -->
+        <div style="align-self:center; min-width:260px;">
+          <table class="svc-table">
+            <thead>
+              <tr><th>Dimensione</th><th style="color:#c96800;">AWS</th><th style="color:#0061a8;">Azure</th><th style="color:#cc0000;">GCP</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Ecosistema servizi</td><td>9.5/10</td><td>8.5/10</td><td>8/10</td></tr>
+              <tr><td>Sicurezza &amp; Compliance</td><td>9/10</td><td>9.5/10</td><td>8.5/10</td></tr>
+              <tr><td>Supporto Enterprise</td><td>8.5/10</td><td>9/10</td><td>7/10</td></tr>
+              <tr><td>Costo/Performance</td><td>6.5/10</td><td>6/10</td><td>8.5/10</td></tr>
+              <tr><td>Performance Network</td><td>8.5/10</td><td>8/10</td><td>9/10</td></tr>
+              <tr><td>Facilità di setup</td><td>7/10</td><td>7.5/10</td><td>8/10</td></tr>
+            </tbody>
+          </table>
+          <div class="note" style="margin-top:10px;">Valutazione soggettiva basata su best practice di settore e feedback della community al 2025.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       SEZIONE 6 – RACCOMANDAZIONI
+  ══════════════════════════════════════════════ -->
+  <section>
+    <h2>6. Raccomandazioni d'uso</h2>
+    <div class="cloud-grid">
+      <div class="card">
+        <span class="badge badge-aws">&#x2728; Scegli AWS se...</span>
+        <ul style="padding-left:18px; font-size:.92rem; line-height:1.8;">
+          <li>Il team ha già esperienza AWS o vuole la piattaforma più matura</li>
+          <li>Il progetto richiede Oracle come database (PL/SQL, stored procedure, Oracle-specific features)</li>
+          <li>Hai già licenze Oracle e vuoi sfruttarle in cloud con la modalità BYOL</li>
+          <li>Vuoi il CDN edge più capillare al mondo (CloudFront)</li>
+          <li>Il progetto richiede molti servizi managed "niche" (ML, IoT, analytics)</li>
+          <li>Prevedi uso intensivo di Lambda (serverless event-driven)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="badge badge-azure">&#x2728; Scegli Azure se...</span>
+        <ul style="padding-left:18px; font-size:.92rem; line-height:1.8;">
+          <li>L'azienda usa già Microsoft 365, Teams, Active Directory</li>
+          <li>Hai licenze SQL Server esistenti da sfruttare con Azure Hybrid Benefit (risparmio fino al 40%)</li>
+          <li>Hai bisogno del developer portal APIM più completo del mercato</li>
+          <li>Lavori in contesti enterprise con requisiti di compliance europei</li>
+          <li>Il team di sviluppo è .NET / C# oriented</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="badge badge-gcp">&#x2728; Scegli GCP se...</span>
+        <ul style="padding-left:18px; font-size:.92rem; line-height:1.8;">
+          <li>Vuoi il miglior serverless container (Cloud Run) con cold start minimo</li>
+          <li>Hai carichi con database MySQL e vuoi un servizio completamente gestito su infrastruttura Google</li>
+          <li>Vuoi Kubernetes gestito al massimo livello (GKE Autopilot)</li>
+          <li>Vuoi ridurre i costi mantenendo alte performance di rete</li>
+          <li>Il progetto include AI/ML (integrazione nativa con Vertex AI)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>Documento elaborato con dati di riferimento aggiornati al 2025 · Architettura N-Tier per servizi online · AWS, Azure e GCP sono marchi registrati dei rispettivi proprietari</p>
+</footer>
+
+</body>
+</html>
