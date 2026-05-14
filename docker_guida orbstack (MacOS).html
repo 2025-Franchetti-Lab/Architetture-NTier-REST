@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guida Docker – ServerRest Calcolatrice</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #f8f9fb;
+      --surface:   #ffffff;
+      --border:    #dde1e9;
+      --accent:    #2563eb;
+      --accent-lt: #eff6ff;
+      --green:     #16a34a;
+      --green-lt:  #f0fdf4;
+      --orange:    #d97706;
+      --orange-lt: #fffbeb;
+      --red:       #dc2626;
+      --red-lt:    #fef2f2;
+      --purple:    #7c3aed;
+      --purple-lt: #f5f3ff;
+      --code-bg:   #1e2330;
+      --code-fg:   #cdd6f4;
+      --text:      #1e293b;
+      --muted:     #64748b;
+      --radius:    8px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 15px;
+    }
+
+    /* ── Layout ── */
+    .page-header {
+      background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 60%, #3b82f6 100%);
+      color: #fff;
+      padding: 48px 32px 40px;
+    }
+    .page-header h1 { font-size: 2rem; font-weight: 700; margin-bottom: 6px; }
+    .page-header p  { opacity: .85; font-size: 1.05rem; }
+    .badge {
+      display: inline-block;
+      background: rgba(255,255,255,.18);
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 99px;
+      padding: 2px 12px;
+      font-size: .78rem;
+      font-weight: 600;
+      margin-right: 6px;
+      margin-top: 14px;
+    }
+
+    main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ── Table of contents ── */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: .85rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 12px; }
+    .toc ol  { padding-left: 18px; }
+    .toc li  { margin: 4px 0; }
+    .toc a   { color: var(--accent); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* ── Sections ── */
+    section { margin-bottom: 48px; }
+    section h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 6px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    section h2 .num {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 99px;
+      width: 28px; height: 28px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: .85rem; font-weight: 700; flex-shrink: 0;
+    }
+    section h3 { font-size: 1.05rem; font-weight: 600; margin: 22px 0 10px; }
+
+    p { margin-bottom: 12px; }
+    ul, ol { padding-left: 22px; margin-bottom: 12px; }
+    li { margin: 5px 0; }
+    strong { color: var(--text); }
+
+    /* ── Callout boxes ── */
+    .callout {
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin: 18px 0;
+      border-left: 4px solid;
+      font-size: .93rem;
+    }
+    .callout.info   { background: var(--accent-lt); border-color: var(--accent); }
+    .callout.ok     { background: var(--green-lt);  border-color: var(--green);  }
+    .callout.warn   { background: var(--orange-lt); border-color: var(--orange); }
+    .callout.tip    { background: var(--purple-lt); border-color: var(--purple); }
+    .callout-title  { font-weight: 700; margin-bottom: 4px; }
+    .callout.info  .callout-title { color: var(--accent);  }
+    .callout.ok    .callout-title { color: var(--green);   }
+    .callout.warn  .callout-title { color: var(--orange);  }
+    .callout.tip   .callout-title { color: var(--purple);  }
+
+    /* ── Code blocks ── */
+    pre {
+      background: var(--code-bg);
+      color: var(--code-fg);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.7;
+      margin: 14px 0;
+      position: relative;
+    }
+    pre .label {
+      position: absolute;
+      top: 8px; right: 12px;
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: #6b7a99;
+      font-family: sans-serif;
+    }
+    code { font-family: "SF Mono", "Fira Code", Consolas, monospace; }
+    p code, li code {
+      background: #eef0f5;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: .875em;
+      color: #c026d3;
+    }
+
+    /* Syntax highlight helpers */
+    .kw  { color: #89b4fa; }   /* keyword / instruction */
+    .cm  { color: #6272a4; font-style: italic; }  /* comment */
+    .str { color: #a6e3a1; }   /* string */
+    .num { color: #fab387; }   /* number */
+    .cmd { color: #f8f8f2; }   /* command text */
+    .flag{ color: #cba6f7; }   /* flags */
+
+    /* ── Comparison table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: .9rem;
+    }
+    thead th {
+      background: var(--accent);
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+    }
+    tbody td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:nth-child(even) td { background: #f8faff; }
+
+    /* ── Step list ── */
+    .steps { counter-reset: step; list-style: none; padding: 0; }
+    .steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 14px;
+      margin-bottom: 18px;
+      align-items: flex-start;
+    }
+    .steps li::before {
+      content: counter(step);
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      width: 26px; height: 26px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; font-weight: 700; flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: .83rem;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 600px) {
+      .page-header { padding: 32px 20px; }
+      .page-header h1 { font-size: 1.5rem; }
+      main { padding: 24px 16px 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ────────────────────────── HEADER ────────────────────────── -->
+<header class="page-header">
+  <h1>Guida alla Containerizzazione con Docker</h1>
+  <p>ServerRest Calcolatrice &mdash; Java 24 + GSON</p>
+  <div>
+    <span class="badge">Java 24</span>
+    <span class="badge">Docker</span>
+    <span class="badge">OrbStack</span>
+    <span class="badge">REST API</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ────────────────── TOC ────────────────── -->
+  <nav class="toc">
+    <h2>Indice</h2>
+    <ol>
+      <li><a href="#concetti">Concetti fondamentali</a></li>
+      <li><a href="#strumenti">Strumenti disponibili: Docker Desktop vs OrbStack</a></li>
+      <li><a href="#struttura">Struttura del progetto</a></li>
+      <li><a href="#dockerfile">Creazione del Dockerfile</a></li>
+      <li><a href="#dockerignore">File .dockerignore</a></li>
+      <li><a href="#build">Build dell'immagine</a></li>
+      <li><a href="#run">Avvio del container</a></li>
+      <li><a href="#verifica">Verifica del funzionamento</a></li>
+      <li><a href="#compose">Docker Compose (opzionale)</a></li>
+      <li><a href="#comandi">Comandi Docker essenziali</a></li>
+      <li><a href="#troubleshooting">Risoluzione problemi comuni</a></li>
+    </ol>
+  </nav>
+
+  <!-- ────────────────── 1. CONCETTI ────────────────── -->
+  <section id="concetti">
+    <h2><span class="num">1</span> Concetti fondamentali</h2>
+
+    <p>Docker permette di eseguire un'applicazione in un <strong>container</strong>: un ambiente isolato e riproducibile che contiene tutto il necessario (JDK, librerie, configurazione) indipendentemente dal sistema operativo dell'host.</p>
+
+    <h3>Termini chiave</h3>
+    <table>
+      <thead><tr><th>Termine</th><th>Descrizione</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Image</strong></td><td>Snapshot read-only del filesystem e della configurazione dell'applicazione. È il "modello" da cui si crea il container.</td></tr>
+        <tr><td><strong>Container</strong></td><td>Istanza in esecuzione di un'image. Può essere avviato, fermato, eliminato.</td></tr>
+        <tr><td><strong>Dockerfile</strong></td><td>File di testo con le istruzioni per costruire l'image passo per passo.</td></tr>
+        <tr><td><strong>Registry</strong></td><td>Repository di image (es. Docker Hub). Da qui si scaricano le image di base (<code>openjdk</code>, <code>ubuntu</code>, ecc.).</td></tr>
+        <tr><td><strong>Volume</strong></td><td>Meccanismo per persistere i dati al di fuori del filesystem del container.</td></tr>
+        <tr><td><strong>Port mapping</strong></td><td>Collega una porta del container a una porta dell'host (<code>-p HOST:CONTAINER</code>).</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Flusso di lavoro</h3>
+    <div class="callout info">
+      <div class="callout-title">Workflow Docker</div>
+      <code>Dockerfile</code> &rarr; <code>docker build</code> &rarr; <strong>Image</strong> &rarr; <code>docker run</code> &rarr; <strong>Container in esecuzione</strong>
+    </div>
+  </section>
+
+  <!-- ────────────────── 2. STRUMENTI ────────────────── -->
+  <section id="strumenti">
+    <h2><span class="num">2</span> Strumenti: Docker Desktop vs OrbStack</h2>
+
+    <table>
+      <thead><tr><th>Funzionalità</th><th>Docker Desktop</th><th>OrbStack</th></tr></thead>
+      <tbody>
+        <tr><td>Avvio</td><td>Lento (&sim;10-20 s)</td><td>Rapidissimo (&lt; 2 s)</td></tr>
+        <tr><td>Consumo RAM</td><td>Alto (VM pesante)</td><td>Basso (VM leggera)</td></tr>
+        <tr><td>Consumo CPU idle</td><td>Significativo</td><td>Quasi zero</td></tr>
+        <tr><td>Compatibilità comandi</td><td>Completa (<code>docker</code> CLI)</td><td>Completa (<code>docker</code> CLI)</td></tr>
+        <tr><td>Interfaccia grafica</td><td>Sì (Docker Desktop app)</td><td>Sì (OrbStack app, menu bar)</td></tr>
+        <tr><td>Licenza</td><td>Gratuita per uso personale/didattico</td><td>Gratuita per uso personale/didattico</td></tr>
+        <tr><td>Architetture supportate</td><td>amd64, arm64</td><td>amd64, arm64 (ottimizzato Apple Silicon)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout tip">
+      <div class="callout-title">Consiglio</div>
+      I comandi <code>docker</code> sono <strong>identici</strong> su entrambi gli strumenti. Questa guida funziona con Docker Desktop e con OrbStack senza alcuna modifica.
+    </div>
+
+    <h3>Verificare che Docker sia attivo</h3>
+    <pre><code><span class="cmd">docker --version</span>
+<span class="cm"># Output atteso (esempio):</span>
+<span class="cm"># Docker version 27.x.x, build ...</span>
+
+<span class="cmd">docker info</span>
+<span class="cm"># Deve mostrare "Server: Docker Engine" senza errori</span></code></pre>
+
+    <div class="callout warn">
+      <div class="callout-title">Attenzione</div>
+      Se compare <em>"Cannot connect to the Docker daemon"</em>, assicurarsi che Docker Desktop o OrbStack sia avviato e il daemon sia in esecuzione.
+    </div>
+  </section>
+
+  <!-- ────────────────── 3. STRUTTURA ────────────────── -->
+  <section id="struttura">
+    <h2><span class="num">3</span> Struttura del progetto</h2>
+
+    <p>Il progetto <strong>ServerRest-Calcolatrice</strong> è un'applicazione Java 24 costruita con <strong>Apache Ant</strong> tramite NetBeans. Espone un'API REST sulla porta <code>8080</code>.</p>
+
+<pre><code>ServerRest-Calcolatrice/
+├── <span class="str">src/serverrest/</span>
+│   ├── App.java                <span class="cm"># Entry point (main class)</span>
+│   ├── ServerRest.java         <span class="cm"># Avvio HttpServer</span>
+│   ├── CalcolatriceService.java
+│   ├── GetHandler.java
+│   ├── PostHandler.java
+│   ├── OperazioneRequest.java
+│   └── OperazioneResponse.java
+├── <span class="str">lib/</span>
+│   └── gson-2.13.2.jar         <span class="cm"># Unica dipendenza esterna</span>
+├── build.xml                   <span class="cm"># Script Ant</span>
+├── manifest.mf
+└── nbproject/</code></pre>
+
+    <p>Endpoint esposti dal server:</p>
+    <ul>
+      <li><code>GET  /api/calcola/get?operando1=X&amp;operando2=Y&amp;operatore=OP</code></li>
+      <li><code>POST /api/calcola/post</code> — body JSON con operando1, operando2, operatore</li>
+      <li><code>GET  /</code> — info sull'API in formato JSON</li>
+    </ul>
+  </section>
+
+  <!-- ────────────────── 4. DOCKERFILE ────────────────── -->
+  <section id="dockerfile">
+    <h2><span class="num">4</span> Creazione del Dockerfile</h2>
+
+    <p>Creare il file <code>Dockerfile</code> (senza estensione) nella cartella radice del progetto. Si usa un <strong>multi-stage build</strong>: la prima fase compila il progetto, la seconda crea l'immagine finale leggera.</p>
+
+<pre><code><span class="label">Dockerfile</span><span class="cm"># ── Stage 1: Build ──────────────────────────────────────────</span>
+<span class="kw">FROM</span> eclipse-temurin:<span class="num">24-jdk-alpine</span> <span class="kw">AS</span> builder
+
+<span class="cm"># Installa Apache Ant</span>
+<span class="kw">RUN</span> apk add --no-cache ant
+
+<span class="cm"># Crea la directory di lavoro</span>
+<span class="kw">WORKDIR</span> /app
+
+<span class="cm"># Copia i file necessari per la build</span>
+<span class="kw">COPY</span> src/        ./src/
+<span class="kw">COPY</span> lib/        ./lib/
+<span class="kw">COPY</span> build.xml   ./
+<span class="kw">COPY</span> manifest.mf ./
+<span class="kw">COPY</span> nbproject/  ./nbproject/
+
+<span class="cm"># Compila e crea il JAR tramite Ant</span>
+<span class="kw">RUN</span> ant jar
+
+<span class="cm"># ── Stage 2: Runtime ─────────────────────────────────────────</span>
+<span class="kw">FROM</span> eclipse-temurin:<span class="num">24-jre-alpine</span>
+
+<span class="kw">WORKDIR</span> /app
+
+<span class="cm"># Copia solo il JAR prodotto e la libreria GSON</span>
+<span class="kw">COPY</span> <span class="flag">--from=builder</span> /app/dist/ServerRest.jar ./ServerRest.jar
+<span class="kw">COPY</span> <span class="flag">--from=builder</span> /app/lib/              ./lib/
+
+<span class="cm"># Espone la porta del server REST</span>
+<span class="kw">EXPOSE</span> <span class="num">8080</span>
+
+<span class="cm"># Avvia il server; il numero di porta può essere sovrascritto</span>
+<span class="cm"># passando un argomento al container: docker run ... serverrest 9090</span>
+<span class="kw">ENTRYPOINT</span> [<span class="str">"java"</span>, <span class="str">"-cp"</span>, <span class="str">"ServerRest.jar:lib/gson-2.13.2.jar"</span>, <span class="str">"serverrest.App"</span>]
+<span class="kw">CMD</span> [<span class="str">"8080"</span>]</code></pre>
+
+    <h3>Spiegazione delle istruzioni principali</h3>
+    <table>
+      <thead><tr><th>Istruzione</th><th>Significato</th></tr></thead>
+      <tbody>
+        <tr><td><code>FROM</code></td><td>Specifica l'image di base. <code>eclipse-temurin:24-jdk-alpine</code> contiene OpenJDK 24 su Alpine Linux (immagine piccola).</td></tr>
+        <tr><td><code>WORKDIR</code></td><td>Imposta la directory di lavoro all'interno del container.</td></tr>
+        <tr><td><code>COPY</code></td><td>Copia file/cartelle dall'host al filesystem del container.</td></tr>
+        <tr><td><code>RUN</code></td><td>Esegue un comando durante la build (ogni <code>RUN</code> crea un layer).</td></tr>
+        <tr><td><code>EXPOSE</code></td><td>Documenta la porta usata dall'applicazione (non la pubblica automaticamente).</td></tr>
+        <tr><td><code>ENTRYPOINT</code></td><td>Comando principale eseguito all'avvio del container. Non sovrascrivibile senza <code>--entrypoint</code>.</td></tr>
+        <tr><td><code>CMD</code></td><td>Argomenti di default per <code>ENTRYPOINT</code>. Sovrascrivibile passando argomenti a <code>docker run</code>.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout info">
+      <div class="callout-title">Perché multi-stage build?</div>
+      La prima stage installa JDK + Ant (&sim;400 MB). La seconda usa solo il JRE (&sim;180 MB) e contiene esclusivamente il JAR compilato. L'immagine finale è molto più piccola e sicura (nessun compilatore, nessun Ant).
+    </div>
+  </section>
+
+  <!-- ────────────────── 5. DOCKERIGNORE ────────────────── -->
+  <section id="dockerignore">
+    <h2><span class="num">5</span> File .dockerignore</h2>
+
+    <p>Il file <code>.dockerignore</code> esclude dalla build i file non necessari, accelerando il trasferimento del contesto a Docker e riducendo la dimensione dell'immagine.</p>
+
+    <p>Creare il file <code>.dockerignore</code> nella cartella radice del progetto:</p>
+
+<pre><code><span class="label">.dockerignore</span><span class="cm"># Output di build (verranno rigenerati)</span>
+build/
+dist/
+
+<span class="cm"># File di sistema macOS</span>
+.DS_Store
+**/.DS_Store
+
+<span class="cm"># Configurazione privata di NetBeans</span>
+nbproject/private/
+
+<span class="cm"># Git</span>
+.git/
+.gitattributes
+
+<span class="cm"># File HTML di test (non servono nel container)</span>
+src/serverrest/test.html
+*.html</code></pre>
+  </section>
+
+  <!-- ────────────────── 6. BUILD ────────────────── -->
+  <section id="build">
+    <h2><span class="num">6</span> Build dell'immagine</h2>
+
+    <p>Aprire il Terminale, posizionarsi nella cartella del progetto e lanciare il comando di build:</p>
+
+<pre><code><span class="cm"># Entra nella cartella del progetto</span>
+<span class="cmd">cd ~/percorso/ServerRest-Calcolatrice</span>
+
+<span class="cm"># Costruisce l'immagine con il tag "serverrest-calcolatrice:1.0"</span>
+<span class="cmd">docker build</span> <span class="flag">-t</span> serverrest-calcolatrice:<span class="num">1.0</span> .
+
+<span class="cm"># Oppure con il tag "latest" (più comune)</span>
+<span class="cmd">docker build</span> <span class="flag">-t</span> serverrest-calcolatrice .
+</code></pre>
+
+    <h3>Output atteso durante la build</h3>
+<pre><code>[+] Building 45.2s (14/14) FINISHED
+ => [internal] load build definition from Dockerfile
+ => [internal] load .dockerignore
+ => [builder 1/7] FROM eclipse-temurin:24-jdk-alpine
+ => [builder 2/7] RUN apk add --no-cache ant
+ => [builder 3/7] WORKDIR /app
+ => [builder 4/7] COPY src/ ./src/
+ => [builder 5/7] COPY lib/ ./lib/
+ ...
+ => [builder 7/7] RUN ant jar
+ => [stage-1 2/3] COPY --from=builder /app/dist/ServerRest.jar ...
+ => exporting to image
+ => naming to docker.io/library/serverrest-calcolatrice:1.0</code></pre>
+
+    <h3>Verificare le immagini presenti</h3>
+<pre><code><span class="cmd">docker images</span>
+
+<span class="cm"># Output:</span>
+<span class="cm"># REPOSITORY               TAG    IMAGE ID       SIZE</span>
+<span class="cm"># serverrest-calcolatrice  1.0    a1b2c3d4e5f6   ~200MB</span></code></pre>
+
+    <div class="callout ok">
+      <div class="callout-title">Build riuscita</div>
+      Se il comando termina senza errori, l'immagine è pronta. La build successiva sarà molto più rapida grazie alla cache dei layer Docker.
+    </div>
+  </section>
+
+  <!-- ────────────────── 7. RUN ────────────────── -->
+  <section id="run">
+    <h2><span class="num">7</span> Avvio del container</h2>
+
+    <h3>Avvio base (foreground)</h3>
+<pre><code><span class="cmd">docker run</span> <span class="flag">-p</span> <span class="num">8080</span>:<span class="num">8080</span> serverrest-calcolatrice
+</code></pre>
+
+    <h3>Avvio in background (detached)</h3>
+<pre><code><span class="cmd">docker run</span> <span class="flag">-d</span> \
+  <span class="flag">-p</span> <span class="num">8080</span>:<span class="num">8080</span> \
+  <span class="flag">--name</span> calcolatrice-server \
+  serverrest-calcolatrice
+</code></pre>
+
+    <h3>Avvio su porta personalizzata (es. 9090)</h3>
+<pre><code><span class="cmd">docker run</span> <span class="flag">-d</span> \
+  <span class="flag">-p</span> <span class="num">9090</span>:<span class="num">9090</span> \
+  <span class="flag">--name</span> calcolatrice-server \
+  serverrest-calcolatrice <span class="num">9090</span>
+</code></pre>
+
+    <h3>Significato delle opzioni principali</h3>
+    <table>
+      <thead><tr><th>Opzione</th><th>Significato</th></tr></thead>
+      <tbody>
+        <tr><td><code>-d</code></td><td>Detached: il container gira in background</td></tr>
+        <tr><td><code>-p 8080:8080</code></td><td>Mappa la porta 8080 dell'host alla porta 8080 del container</td></tr>
+        <tr><td><code>--name calcolatrice-server</code></td><td>Assegna un nome al container (più comodo dei hash)</td></tr>
+        <tr><td><code>--rm</code></td><td>Elimina automaticamente il container quando si ferma</td></tr>
+        <tr><td><code>-e VARIABILE=valore</code></td><td>Imposta una variabile d'ambiente nel container</td></tr>
+        <tr><td><code>-v /host:/container</code></td><td>Monta un volume (cartella condivisa host ↔ container)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Output del server all'avvio</h3>
+<pre><code>==============================================
+  Server REST con GSON avviato!
+==============================================
+Porta: 8080
+
+Endpoint disponibili:
+  - POST: http://localhost:8080/api/calcola/post
+  - GET:  http://localhost:8080/api/calcola/get
+  - Info: http://localhost:8080/
+
+Operatori supportati:
+  SOMMA, SOTTRAZIONE, MOLTIPLICAZIONE, DIVISIONE
+
+Premi Ctrl+C per fermare il server
+==============================================</code></pre>
+  </section>
+
+  <!-- ────────────────── 8. VERIFICA ────────────────── -->
+  <section id="verifica">
+    <h2><span class="num">8</span> Verifica del funzionamento</h2>
+
+    <h3>Dall'interfaccia grafica (Docker Desktop / OrbStack)</h3>
+    <ul>
+      <li><strong>Docker Desktop</strong>: aprire l'app &rarr; sezione <em>Containers</em> &rarr; cliccare sul container &rarr; tab <em>Logs</em></li>
+      <li><strong>OrbStack</strong>: menu bar &rarr; icona OrbStack &rarr; <em>Open OrbStack</em> &rarr; sezione <em>Containers</em></li>
+    </ul>
+
+    <h3>Dalla riga di comando (curl)</h3>
+
+<pre><code><span class="cm"># Test endpoint info</span>
+<span class="cmd">curl http://localhost:8080/</span>
+
+<span class="cm"># Test GET – somma di 15 + 7</span>
+<span class="cmd">curl "http://localhost:8080/api/calcola/get?operando1=15&operando2=7&operatore=SOMMA"</span>
+
+<span class="cm"># Test POST – moltiplicazione 6 × 9</span>
+<span class="cmd">curl -X POST http://localhost:8080/api/calcola/post \</span>
+<span class="cmd">     -H "Content-Type: application/json" \</span>
+<span class="cmd">     -d '{"operando1":6,"operando2":9,"operatore":"MOLTIPLICAZIONE"}'</span></code></pre>
+
+    <h3>Risposta JSON attesa (POST)</h3>
+<pre><code>{
+  "risultato": 54.0,
+  "operazione": "6.0 MOLTIPLICAZIONE 9.0",
+  "errore": null
+}</code></pre>
+
+    <h3>Visualizzare i log del container</h3>
+<pre><code><span class="cm"># Log in tempo reale (seguire)</span>
+<span class="cmd">docker logs</span> <span class="flag">-f</span> calcolatrice-server
+
+<span class="cm"># Ultime 50 righe</span>
+<span class="cmd">docker logs</span> <span class="flag">--tail</span> <span class="num">50</span> calcolatrice-server</code></pre>
+  </section>
+
+  <!-- ────────────────── 9. COMPOSE ────────────────── -->
+  <section id="compose">
+    <h2><span class="num">9</span> Docker Compose (opzionale)</h2>
+
+    <p>Docker Compose semplifica l'avvio definendo la configurazione in un file YAML. Utile quando si vogliono aggiungere servizi aggiuntivi (database, proxy, ecc.).</p>
+
+    <p>Creare il file <code>compose.yaml</code> nella radice del progetto:</p>
+
+<pre><code><span class="label">compose.yaml</span><span class="kw">services</span>:
+  <span class="kw">calcolatrice</span>:
+    <span class="kw">build</span>: .
+    <span class="kw">image</span>: serverrest-calcolatrice:<span class="num">1.0</span>
+    <span class="kw">container_name</span>: calcolatrice-server
+    <span class="kw">ports</span>:
+      - <span class="str">"8080:8080"</span>
+    <span class="kw">restart</span>: unless-stopped
+    <span class="kw">healthcheck</span>:
+      <span class="kw">test</span>: [<span class="str">"CMD"</span>, <span class="str">"wget"</span>, <span class="str">"-qO-"</span>, <span class="str">"http://localhost:8080/"</span>]
+      <span class="kw">interval</span>: <span class="num">30s</span>
+      <span class="kw">timeout</span>: <span class="num">5s</span>
+      <span class="kw">retries</span>: <span class="num">3</span></code></pre>
+
+    <h3>Comandi Docker Compose</h3>
+<pre><code><span class="cm"># Avvia i servizi (build inclusa se necessario)</span>
+<span class="cmd">docker compose up</span> <span class="flag">-d</span>
+
+<span class="cm"># Ferma i servizi</span>
+<span class="cmd">docker compose down</span>
+
+<span class="cm"># Ricostruisce l'immagine e riavvia</span>
+<span class="cmd">docker compose up</span> <span class="flag">--build -d</span>
+
+<span class="cm"># Visualizza lo stato dei servizi</span>
+<span class="cmd">docker compose ps</span>
+
+<span class="cm"># Log di tutti i servizi</span>
+<span class="cmd">docker compose logs</span> <span class="flag">-f</span></code></pre>
+  </section>
+
+  <!-- ────────────────── 10. COMANDI ────────────────── -->
+  <section id="comandi">
+    <h2><span class="num">10</span> Comandi Docker essenziali</h2>
+
+    <h3>Gestione immagini</h3>
+<pre><code><span class="cm"># Elenco immagini</span>
+<span class="cmd">docker images</span>
+
+<span class="cm"># Elimina un'immagine</span>
+<span class="cmd">docker rmi</span> serverrest-calcolatrice:<span class="num">1.0</span>
+
+<span class="cm"># Elimina tutte le immagini non usate</span>
+<span class="cmd">docker image prune</span>
+
+<span class="cm"># Scarica un'immagine da Docker Hub</span>
+<span class="cmd">docker pull</span> eclipse-temurin:<span class="num">24-jre-alpine</span>
+</code></pre>
+
+    <h3>Gestione container</h3>
+<pre><code><span class="cm"># Elenco container in esecuzione</span>
+<span class="cmd">docker ps</span>
+
+<span class="cm"># Elenco di tutti i container (inclusi quelli fermi)</span>
+<span class="cmd">docker ps</span> <span class="flag">-a</span>
+
+<span class="cm"># Ferma un container</span>
+<span class="cmd">docker stop</span> calcolatrice-server
+
+<span class="cm"># Avvia un container esistente</span>
+<span class="cmd">docker start</span> calcolatrice-server
+
+<span class="cm"># Elimina un container (deve essere fermo)</span>
+<span class="cmd">docker rm</span> calcolatrice-server
+
+<span class="cm"># Ferma e rimuove in un colpo solo</span>
+<span class="cmd">docker rm</span> <span class="flag">-f</span> calcolatrice-server
+
+<span class="cm"># Apre una shell all'interno del container in esecuzione</span>
+<span class="cmd">docker exec</span> <span class="flag">-it</span> calcolatrice-server sh
+
+<span class="cm"># Ispeziona dettagli del container (JSON)</span>
+<span class="cmd">docker inspect</span> calcolatrice-server
+</code></pre>
+
+    <h3>Pulizia generale</h3>
+<pre><code><span class="cm"># Rimuove tutto ciò che non è in uso (immagini, container, network, cache)</span>
+<span class="cmd">docker system prune</span>
+
+<span class="cm"># Con conferma automatica (attenzione: elimina tutto!)</span>
+<span class="cmd">docker system prune</span> <span class="flag">-f</span></code></pre>
+  </section>
+
+  <!-- ────────────────── 11. TROUBLESHOOTING ────────────────── -->
+  <section id="troubleshooting">
+    <h2><span class="num">11</span> Risoluzione problemi comuni</h2>
+
+    <div class="callout warn">
+      <div class="callout-title">Problema: "port is already allocated"</div>
+      La porta 8080 è già usata da un altro processo o container.<br>
+      <strong>Soluzione:</strong> <code>docker run -p 8081:8080 ...</code> (usa la porta 8081 sull'host) oppure ferma il processo che occupa la porta.
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-title">Problema: build fallisce su "ant jar"</div>
+      Ant non riesce a trovare la struttura del progetto NetBeans.<br>
+      <strong>Soluzione:</strong> verificare che il file <code>build.xml</code> e la cartella <code>nbproject/</code> siano nella radice del progetto e non siano esclusi dal <code>.dockerignore</code>.
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-title">Problema: "ClassNotFoundException: serverrest.App"</div>
+      Il JAR non include le classi o il classpath è errato.<br>
+      <strong>Soluzione:</strong> verificare che <code>manifest.mf</code> contenga <code>Main-Class: serverrest.App</code> e che il <code>ENTRYPOINT</code> nel Dockerfile includa <code>lib/gson-2.13.2.jar</code> nel classpath.
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-title">Problema: il container si avvia e si chiude subito</div>
+      L'applicazione è andata in crash all'avvio.<br>
+      <strong>Soluzione:</strong> <code>docker logs calcolatrice-server</code> per vedere il messaggio di errore.
+    </div>
+
+    <div class="callout ok">
+      <div class="callout-title">Comandi diagnostici utili</div>
+      <code>docker logs calcolatrice-server</code> &mdash; log completi<br>
+      <code>docker inspect calcolatrice-server</code> &mdash; configurazione e stato<br>
+      <code>docker exec -it calcolatrice-server sh</code> &mdash; shell nel container
+    </div>
+
+    <h3>Riepilogo del workflow completo</h3>
+    <ol class="steps">
+      <li>Assicurarsi che Docker Desktop o OrbStack sia in esecuzione</li>
+      <li>Creare <code>Dockerfile</code> e <code>.dockerignore</code> nella radice del progetto</li>
+      <li>Eseguire <code>docker build -t serverrest-calcolatrice .</code></li>
+      <li>Eseguire <code>docker run -d -p 8080:8080 --name calcolatrice-server serverrest-calcolatrice</code></li>
+      <li>Testare con <code>curl http://localhost:8080/</code></li>
+      <li>Consultare i log con <code>docker logs -f calcolatrice-server</code> in caso di problemi</li>
+    </ol>
+  </section>
+
+  <footer>
+    <p>ServerRest-Calcolatrice &bull; TEPSIT Classe 5 &bull; Guida Docker &bull; 2026</p>
+  </footer>
+
+</main>
+</body>
+</html>

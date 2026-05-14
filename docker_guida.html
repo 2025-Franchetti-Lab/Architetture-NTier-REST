@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guida Docker – ServerRest Calcolatrice</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #f8f9fb;
+      --surface:   #ffffff;
+      --border:    #dde1e9;
+      --accent:    #2563eb;
+      --accent-lt: #eff6ff;
+      --green:     #16a34a;
+      --green-lt:  #f0fdf4;
+      --orange:    #d97706;
+      --orange-lt: #fffbeb;
+      --red:       #dc2626;
+      --red-lt:    #fef2f2;
+      --purple:    #7c3aed;
+      --purple-lt: #f5f3ff;
+      --code-bg:   #1e2330;
+      --code-fg:   #cdd6f4;
+      --text:      #1e293b;
+      --muted:     #64748b;
+      --radius:    8px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 15px;
+    }
+
+    /* ── Layout ── */
+    .page-header {
+      background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 60%, #3b82f6 100%);
+      color: #fff;
+      padding: 48px 32px 40px;
+    }
+    .page-header h1 { font-size: 2rem; font-weight: 700; margin-bottom: 6px; }
+    .page-header p  { opacity: .85; font-size: 1.05rem; }
+    .badge {
+      display: inline-block;
+      background: rgba(255,255,255,.18);
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 99px;
+      padding: 2px 12px;
+      font-size: .78rem;
+      font-weight: 600;
+      margin-right: 6px;
+      margin-top: 14px;
+    }
+
+    main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ── Table of contents ── */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: .85rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 12px; }
+    .toc ol  { padding-left: 18px; }
+    .toc li  { margin: 4px 0; }
+    .toc a   { color: var(--accent); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* ── Sections ── */
+    section { margin-bottom: 48px; }
+    section h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 6px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    section h2 .num {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 99px;
+      width: 28px; height: 28px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: .85rem; font-weight: 700; flex-shrink: 0;
+    }
+    section h3 { font-size: 1.05rem; font-weight: 600; margin: 22px 0 10px; }
+
+    p { margin-bottom: 12px; }
+    ul, ol { padding-left: 22px; margin-bottom: 12px; }
+    li { margin: 5px 0; }
+    strong { color: var(--text); }
+
+    /* ── Callout boxes ── */
+    .callout {
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin: 18px 0;
+      border-left: 4px solid;
+      font-size: .93rem;
+    }
+    .callout.info   { background: var(--accent-lt); border-color: var(--accent); }
+    .callout.ok     { background: var(--green-lt);  border-color: var(--green);  }
+    .callout.warn   { background: var(--orange-lt); border-color: var(--orange); }
+    .callout.tip    { background: var(--purple-lt); border-color: var(--purple); }
+    .callout-title  { font-weight: 700; margin-bottom: 4px; }
+    .callout.info  .callout-title { color: var(--accent);  }
+    .callout.ok    .callout-title { color: var(--green);   }
+    .callout.warn  .callout-title { color: var(--orange);  }
+    .callout.tip   .callout-title { color: var(--purple);  }
+
+    /* ── Code blocks ── */
+    pre {
+      background: var(--code-bg);
+      color: var(--code-fg);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      overflow-x: auto;
+      font-size: .875rem;
+      line-height: 1.7;
+      margin: 14px 0;
+      position: relative;
+    }
+    pre .label {
+      position: absolute;
+      top: 8px; right: 12px;
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: #6b7a99;
+      font-family: sans-serif;
+    }
+    code { font-family: "SF Mono", "Fira Code", Consolas, monospace; }
+    p code, li code {
+      background: #eef0f5;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: .875em;
+      color: #c026d3;
+    }
+
+    /* Syntax highlight helpers */
+    .kw  { color: #89b4fa; }   /* keyword / instruction */
+    .cm  { color: #6272a4; font-style: italic; }  /* comment */
+    .str { color: #a6e3a1; }   /* string */
+    .num { color: #fab387; }   /* number */
+    .cmd { color: #f8f8f2; }   /* command text */
+    .flag{ color: #cba6f7; }   /* flags */
+
+    /* ── Comparison table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: .9rem;
+    }
+    thead th {
+      background: var(--accent);
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+    }
+    tbody td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:nth-child(even) td { background: #f8faff; }
+
+    /* ── Step list ── */
+    .steps { counter-reset: step; list-style: none; padding: 0; }
+    .steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 14px;
+      margin-bottom: 18px;
+      align-items: flex-start;
+    }
+    .steps li::before {
+      content: counter(step);
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      width: 26px; height: 26px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; font-weight: 700; flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: .83rem;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 600px) {
+      .page-header { padding: 32px 20px; }
+      .page-header h1 { font-size: 1.5rem; }
+      main { padding: 24px 16px 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ────────────────────────── HEADER ────────────────────────── -->
+<header class="page-header">
+  <h1>Guida alla Containerizzazione con Docker</h1>
+  <p>ServerRest Calcolatrice &mdash; Java 24 + GSON</p>
+  <div>
+    <span class="badge">Java 24</span>
+    <span class="badge">Docker</span>
+    <span class="badge">Windows</span>
+    <span class="badge">REST API</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ────────────────── TOC ────────────────── -->
+  <nav class="toc">
+    <h2>Indice</h2>
+    <ol>
+      <li><a href="#concetti">Concetti fondamentali</a></li>
+      <li><a href="#strumenti">Installazione Docker Desktop su Windows</a></li>
+      <li><a href="#struttura">Struttura del progetto</a></li>
+      <li><a href="#dockerfile">Creazione del Dockerfile</a></li>
+      <li><a href="#dockerignore">File .dockerignore</a></li>
+      <li><a href="#build">Build dell'immagine</a></li>
+      <li><a href="#run">Avvio del container</a></li>
+      <li><a href="#verifica">Verifica del funzionamento</a></li>
+      <li><a href="#importa">Importazione di una immagine (opzionale)</a></li>
+      <li><a href="#compose">Docker Compose (opzionale)</a></li>
+      <li><a href="#comandi">Comandi Docker essenziali</a></li>
+      <li><a href="#troubleshooting">Risoluzione problemi comuni</a></li>
+    </ol>
+  </nav>
+
+  <!-- ────────────────── 1. CONCETTI ────────────────── -->
+  <section id="concetti">
+    <h2><span class="num">1</span> Concetti fondamentali</h2>
+
+    <p>Docker permette di eseguire un'applicazione in un <strong>container</strong>: un ambiente isolato e riproducibile che contiene tutto il necessario (JDK, librerie, configurazione) indipendentemente dal sistema operativo dell'host.</p>
+
+    <h3>Termini chiave</h3>
+    <table>
+      <thead><tr><th>Termine</th><th>Descrizione</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Image</strong></td><td>Snapshot read-only del filesystem e della configurazione dell'applicazione. È il "modello" da cui si crea il container.</td></tr>
+        <tr><td><strong>Container</strong></td><td>Istanza in esecuzione di un'image. Può essere avviato, fermato, eliminato.</td></tr>
+        <tr><td><strong>Dockerfile</strong></td><td>File di testo con le istruzioni per costruire l'image passo per passo.</td></tr>
+        <tr><td><strong>Registry</strong></td><td>Repository di image (es. Docker Hub). Da qui si scaricano le image di base (<code>openjdk</code>, <code>ubuntu</code>, ecc.).</td></tr>
+        <tr><td><strong>Volume</strong></td><td>Meccanismo per persistere i dati al di fuori del filesystem del container.</td></tr>
+        <tr><td><strong>Port mapping</strong></td><td>Collega una porta del container a una porta dell'host (<code>-p HOST:CONTAINER</code>).</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Flusso di lavoro</h3>
+    <div class="callout info">
+      <div class="callout-title">Workflow Docker</div>
+      <code>Dockerfile</code> &rarr; <code>docker build</code> &rarr; <strong>Image</strong> &rarr; <code>docker run</code> &rarr; <strong>Container in esecuzione</strong>
+    </div>
+  </section>
+
+  <!-- ────────────────── 2. STRUMENTI ────────────────── -->
+  <section id="strumenti">
+    <h2><span class="num">2</span> Installazione Docker Desktop su Windows</h2>
+
+    <p><strong>Docker Desktop</strong> è l'ambiente ufficiale per eseguire Docker su Windows. Integra il Docker Engine, la CLI, Docker Compose e un'interfaccia grafica per gestire immagini e container.</p>
+
+    <h3>Requisiti di sistema</h3>
+    <table>
+      <thead><tr><th>Requisito</th><th>Dettaglio</th></tr></thead>
+      <tbody>
+        <tr><td>Sistema operativo</td><td>Windows 10 64-bit (versione 21H2 o superiore) oppure Windows 11</td></tr>
+        <tr><td>Architettura</td><td>x86-64 (amd64)</td></tr>
+        <tr><td>RAM</td><td>Minimo 4 GB (consigliati 8 GB)</td></tr>
+        <tr><td>Virtualizzazione hardware</td><td>Abilitata nel BIOS/UEFI (Intel VT-x o AMD-V)</td></tr>
+        <tr><td>Backend consigliato</td><td>WSL 2 (Windows Subsystem for Linux 2)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Passo 1 — Abilitare WSL 2</h3>
+    <p>Docker Desktop su Windows utilizza <strong>WSL 2</strong> come backend predefinito. Per l'uso con Docker Desktop <strong>non è necessario installare alcuna distribuzione Linux</strong>: Docker Desktop crea autonomamente le proprie distribuzioni WSL 2 interne (<code>docker-desktop</code> e <code>docker-desktop-data</code>) durante la sua installazione.</p>
+    <p>Aprire <strong>PowerShell come Amministratore</strong> ed eseguire:</p>
+<pre><code><span class="cm"># Abilita WSL 2 senza scaricare alcuna distribuzione Linux</span>
+<span class="cm"># (flag --no-distribution disponibile da WSL 2.0.0, Windows 10/11 aggiornato)</span>
+<span class="cmd">wsl --install --no-distribution</span>
+
+<span class="cm"># Imposta WSL 2 come versione predefinita</span>
+<span class="cmd">wsl --set-default-version 2</span>
+
+<span class="cm"># Verifica la versione WSL installata</span>
+<span class="cmd">wsl --version</span>
+</code></pre>
+
+    <div class="callout tip">
+      <div class="callout-title">Perché --no-distribution?</div>
+      Il comando <code>wsl --install</code> senza opzioni scarica Ubuntu (~500 MB) in aggiunta a WSL stesso. Il flag <code>--no-distribution</code> abilita solo i componenti Windows necessari (sottosistema Linux + piattaforma di virtualizzazione) senza scaricare alcuna distro, risparmiando tempo e spazio. Docker Desktop non ha bisogno di Ubuntu: gestisce il proprio ambiente Linux internamente.
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-title">Sistema non aggiornato? Metodo alternativo con DISM</div>
+      Se <code>--no-distribution</code> non viene riconosciuto (sistemi con WSL precedente alla versione 2.0.0), usare i comandi DISM per abilitare i componenti manualmente:
+      <pre style="margin:8px 0 4px;font-size:.82rem"><code><span class="cm"># Abilita il sottosistema Windows per Linux</span>
+<span class="cmd">dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart</span>
+<span class="cm"># Abilita la piattaforma macchina virtuale (richiesta da WSL 2)</span>
+<span class="cmd">dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart</span>
+<span class="cm"># Riavviare il PC, poi aggiornare WSL e impostare la versione 2</span>
+<span class="cmd">wsl --update</span>
+<span class="cmd">wsl --set-default-version 2</span></code></pre>
+    </div>
+
+    <div class="callout info">
+      <div class="callout-title">Riavvio necessario</div>
+      Dopo aver abilitato WSL è richiesto il riavvio del computer prima di procedere con l'installazione di Docker Desktop.
+    </div>
+
+    <h3>Passo 2 — Scaricare Docker Desktop</h3>
+    <ol class="steps">
+      <li>Aprire il browser e andare su <strong>https://www.docker.com/products/docker-desktop/</strong></li>
+      <li>Cliccare su <strong>"Download for Windows"</strong> per scaricare il file <code>Docker Desktop Installer.exe</code></li>
+      <li>Attendere il completamento del download (il file pesa circa 500 MB)</li>
+    </ol>
+
+    <h3>Passo 3 — Eseguire il programma di installazione</h3>
+    <ol class="steps">
+      <li>Avviare <code>Docker Desktop Installer.exe</code> con doppio clic (potrebbe richiedere i permessi di amministratore)</li>
+      <li>Nella schermata di configurazione, assicurarsi che l'opzione <strong>"Use WSL 2 instead of Hyper-V"</strong> sia selezionata</li>
+      <li>Cliccare <strong>OK</strong> per avviare l'installazione e attendere il completamento</li>
+      <li>Al termine, cliccare <strong>Close and restart</strong> per riavviare il computer</li>
+    </ol>
+
+    <h3>Passo 4 — Avviare Docker Desktop</h3>
+    <ol class="steps">
+      <li>Dopo il riavvio, aprire <strong>Docker Desktop</strong> dal menu Start o dal collegamento sul Desktop</li>
+      <li>Accettare il <em>Docker Subscription Service Agreement</em> (gratuito per uso personale e didattico)</li>
+      <li>Attendere che Docker Desktop raggiunga lo stato <strong>"Engine running"</strong> (icona verde nella barra delle applicazioni)</li>
+      <li>Facoltativamente, creare un account Docker Hub gratuito per accedere ai registry pubblici</li>
+    </ol>
+
+    <div class="callout ok">
+      <div class="callout-title">Docker Desktop è pronto</div>
+      Quando l'icona della balena nella barra delle applicazioni di Windows è di colore verde, il Docker Engine è in esecuzione e i comandi <code>docker</code> sono disponibili dal terminale.
+    </div>
+
+    <h3>Passo 5 — Verificare l'installazione</h3>
+    <p>Aprire il <strong>Prompt dei comandi</strong> (cmd) o <strong>PowerShell</strong> e verificare che Docker risponda correttamente:</p>
+<pre><code><span class="cm"># Verifica la versione installata</span>
+<span class="cmd">docker --version</span>
+<span class="cm"># Output atteso (esempio):</span>
+<span class="cm"># Docker version 27.x.x, build ...</span>
+
+<span class="cm"># Verifica che il daemon sia in esecuzione</span>
+<span class="cmd">docker info</span>
+<span class="cm"># Deve mostrare "Server: Docker Engine" senza errori</span>
+
+<span class="cm"># Test rapido: scarica ed esegue un container di prova</span>
+<span class="cmd">docker run hello-world</span>
+<span class="cm"># Deve stampare "Hello from Docker!" se tutto funziona</span>
+</code></pre>
+
+    <div class="callout warn">
+      <div class="callout-title">Attenzione — "Cannot connect to the Docker daemon"</div>
+      Se compare questo errore, assicurarsi che Docker Desktop sia avviato e che l'icona nella barra delle applicazioni mostri lo stato <em>"Engine running"</em>. In caso di problemi, provare a riavviare Docker Desktop dal menu contestuale dell'icona nella system tray.
+    </div>
+
+    <h3>Configurazione consigliata per uso didattico</h3>
+    <p>In Docker Desktop, aprire <strong>Settings → Resources</strong> e impostare:</p>
+    <table>
+      <thead><tr><th>Risorsa</th><th>Valore consigliato</th></tr></thead>
+      <tbody>
+        <tr><td>CPU</td><td>2–4 core</td></tr>
+        <tr><td>Memory (RAM)</td><td>2–4 GB</td></tr>
+        <tr><td>Disk image size</td><td>20–40 GB</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ────────────────── 3. STRUTTURA ────────────────── -->
+  <section id="struttura">
+    <h2><span class="num">3</span> Struttura del progetto</h2>
+
+    <p>Il progetto <strong>ServerRest-Calcolatrice</strong> è un'applicazione Java 24 costruita con <strong>Apache Ant</strong> tramite NetBeans. Espone un'API REST sulla porta <code>8080</code>.</p>
+
+<pre><code>ServerRest-Calcolatrice/
+├── <span class="str">src/serverrest/</span>
+│   ├── App.java                <span class="cm"># Entry point (main class)</span>
+│   ├── ServerRest.java         <span class="cm"># Avvio HttpServer</span>
+│   ├── CalcolatriceService.java
+│   ├── GetHandler.java
+│   ├── PostHandler.java
+│   ├── OperazioneRequest.java
+│   └── OperazioneResponse.java
+├── <span class="str">lib/</span>
+│   └── gson-2.13.2.jar         <span class="cm"># Unica dipendenza esterna</span>
+├── build.xml                   <span class="cm"># Script Ant</span>
+├── manifest.mf
+└── nbproject/</code></pre>
+
+    <p>Endpoint esposti dal server:</p>
+    <ul>
+      <li><code>GET  /api/calcola/get?operando1=X&amp;operando2=Y&amp;operatore=OP</code></li>
+      <li><code>POST /api/calcola/post</code> — body JSON con operando1, operando2, operatore</li>
+      <li><code>GET  /</code> — info sull'API in formato JSON</li>
+    </ul>
+  </section>
+
+  <!-- ────────────────── 4. DOCKERFILE ────────────────── -->
+  <section id="dockerfile">
+    <h2><span class="num">4</span> Creazione del Dockerfile</h2>
+
+    <p>Creare il file <code>Dockerfile</code> <strong>senza estensione</strong> nella cartella radice del progetto. Si usa un <strong>multi-stage build</strong>: la prima fase compila il progetto, la seconda crea l'immagine finale leggera.</p>
+
+    <div class="callout warn">
+      <div class="callout-title">Attenzione — creazione del Dockerfile su Windows</div>
+      Windows Explorer e il Blocco Note aggiungono automaticamente l'estensione <code>.txt</code>, rendendo il file inutilizzabile da Docker. Per creare il file correttamente usare uno dei metodi seguenti:
+      <ul style="margin-top:8px">
+        <li><strong>VS Code</strong> (consigliato): <em>File → New File</em>, salvare con nome <code>Dockerfile</code> (senza estensione) nella cartella del progetto.</li>
+        <li><strong>PowerShell</strong>: eseguire <code>New-Item Dockerfile</code> dalla cartella del progetto — crea il file vuoto senza estensione.</li>
+        <li><strong>Notepad++</strong>: <em>Salva con nome</em>, selezionare tipo <em>"All files (*.*)"</em> e digitare <code>Dockerfile</code>.</li>
+      </ul>
+      Lo stesso vale per il file <code>.dockerignore</code> (sezione 5).
+    </div>
+
+<pre><code><span class="label">Dockerfile</span><span class="cm"># ── Stage 1: Build ──────────────────────────────────────────</span>
+<span class="kw">FROM</span> eclipse-temurin:<span class="num">24-jdk-alpine</span> <span class="kw">AS</span> builder
+
+<span class="cm"># Installa Apache Ant</span>
+<span class="kw">RUN</span> apk add --no-cache ant
+
+<span class="cm"># Crea la directory di lavoro</span>
+<span class="kw">WORKDIR</span> /app
+
+<span class="cm"># Copia i file necessari per la build</span>
+<span class="kw">COPY</span> src/        ./src/
+<span class="kw">COPY</span> lib/        ./lib/
+<span class="kw">COPY</span> build.xml   ./
+<span class="kw">COPY</span> manifest.mf ./
+<span class="kw">COPY</span> nbproject/  ./nbproject/
+
+<span class="cm"># Compila e crea il JAR tramite Ant</span>
+<span class="kw">RUN</span> ant jar
+
+<span class="cm"># ── Stage 2: Runtime ─────────────────────────────────────────</span>
+<span class="kw">FROM</span> eclipse-temurin:<span class="num">24-jre-alpine</span>
+
+<span class="kw">WORKDIR</span> /app
+
+<span class="cm"># Copia solo il JAR prodotto e la libreria GSON</span>
+<span class="kw">COPY</span> <span class="flag">--from=builder</span> /app/dist/ServerRest.jar ./ServerRest.jar
+<span class="kw">COPY</span> <span class="flag">--from=builder</span> /app/lib/              ./lib/
+
+<span class="cm"># Espone la porta del server REST</span>
+<span class="kw">EXPOSE</span> <span class="num">8080</span>
+
+<span class="cm"># Avvia il server; il numero di porta può essere sovrascritto</span>
+<span class="cm"># passando un argomento al container: docker run ... serverrest 9090</span>
+<span class="kw">ENTRYPOINT</span> [<span class="str">"java"</span>, <span class="str">"-cp"</span>, <span class="str">"ServerRest.jar:lib/gson-2.13.2.jar"</span>, <span class="str">"serverrest.App"</span>]
+<span class="kw">CMD</span> [<span class="str">"8080"</span>]</code></pre>
+
+    <h3>Spiegazione delle istruzioni principali</h3>
+    <table>
+      <thead><tr><th>Istruzione</th><th>Significato</th></tr></thead>
+      <tbody>
+        <tr><td><code>FROM</code></td><td>Specifica l'image di base. <code>eclipse-temurin:24-jdk-alpine</code> contiene OpenJDK 24 su Alpine Linux (immagine piccola).</td></tr>
+        <tr><td><code>WORKDIR</code></td><td>Imposta la directory di lavoro all'interno del container.</td></tr>
+        <tr><td><code>COPY</code></td><td>Copia file/cartelle dall'host al filesystem del container.</td></tr>
+        <tr><td><code>RUN</code></td><td>Esegue un comando durante la build (ogni <code>RUN</code> crea un layer).</td></tr>
+        <tr><td><code>EXPOSE</code></td><td>Documenta la porta usata dall'applicazione (non la pubblica automaticamente).</td></tr>
+        <tr><td><code>ENTRYPOINT</code></td><td>Comando principale eseguito all'avvio del container. Non sovrascrivibile senza <code>--entrypoint</code>.</td></tr>
+        <tr><td><code>CMD</code></td><td>Argomenti di default per <code>ENTRYPOINT</code>. Sovrascrivibile passando argomenti a <code>docker run</code>.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout info">
+      <div class="callout-title">Perché multi-stage build?</div>
+      La prima stage installa JDK + Ant (&sim;400 MB). La seconda usa solo il JRE (&sim;180 MB) e contiene esclusivamente il JAR compilato. L'immagine finale è molto più piccola e sicura (nessun compilatore, nessun Ant).
+    </div>
+  </section>
+
+  <!-- ────────────────── 5. DOCKERIGNORE ────────────────── -->
+  <section id="dockerignore">
+    <h2><span class="num">5</span> File .dockerignore</h2>
+
+    <p>Il file <code>.dockerignore</code> esclude dalla build i file non necessari, accelerando il trasferimento del contesto a Docker e riducendo la dimensione dell'immagine.</p>
+
+    <p>Creare il file <code>.dockerignore</code> nella cartella radice del progetto. Su Windows usare VS Code oppure il comando PowerShell <code>New-Item .dockerignore</code>, poiché Windows Explorer non consente di creare file il cui nome inizia con un punto.</p>
+
+<pre><code><span class="label">.dockerignore</span><span class="cm"># Output di build (verranno rigenerati)</span>
+build/
+dist/
+
+<span class="cm"># File di sistema Windows</span>
+Thumbs.db
+desktop.ini
+*.lnk
+
+<span class="cm"># Configurazione privata di NetBeans</span>
+nbproject/private/
+
+<span class="cm"># Git</span>
+.git/
+.gitattributes
+
+<span class="cm"># File HTML di test (non servono nel container)</span>
+src/serverrest/test.html
+*.html</code></pre>
+
+    <div class="callout tip">
+      <div class="callout-title">Verifica dell'esclusione</div>
+      Per verificare quali file vengono inclusi nel contesto di build, eseguire in PowerShell dalla cartella del progetto:<br>
+      <code>docker build --no-cache --progress=plain -t test . 2&gt;&amp;1 | Select-String "COPY"</code>
+    </div>
+  </section>
+
+  <!-- ────────────────── 6. BUILD ────────────────── -->
+  <section id="build">
+    <h2><span class="num">6</span> Build dell'immagine</h2>
+
+    <p>Aprire <strong>PowerShell</strong> (consigliato) oppure il <strong>Prompt dei comandi (cmd)</strong>, posizionarsi nella cartella del progetto e lanciare il comando di build:</p>
+
+    <div class="callout tip">
+      <div class="callout-title">PowerShell o Prompt dei comandi?</div>
+      I comandi <code>docker</code> funzionano su entrambi. PowerShell è preferibile perché supporta la sintassi con backtick (<code>`</code>) per spezzare i comandi su più righe, ed è disponibile di default su Windows 10 e 11.
+    </div>
+
+<pre><code><span class="cm"># Apri PowerShell dalla cartella del progetto:</span>
+<span class="cm"># tasto destro sulla cartella in Explorer → "Apri in Terminal" (Win 11)</span>
+<span class="cm"># oppure cerca "PowerShell" nel menu Start e naviga manualmente</span>
+
+<span class="cm"># Entra nella cartella del progetto — adatta il percorso alla tua situazione</span>
+<span class="cm"># In PowerShell:</span>
+<span class="cmd">cd C:\Users\nomeutente\Documents\ServerRest-Calcolatrice</span>
+
+<span class="cm"># In alternativa, con il percorso relativo dalla home utente:</span>
+<span class="cmd">cd $env:USERPROFILE\Documents\ServerRest-Calcolatrice</span>
+
+<span class="cm"># Costruisce l'immagine con il tag "serverrest-calcolatrice:1.0"</span>
+<span class="cmd">docker build</span> <span class="flag">-t</span> serverrest-calcolatrice:<span class="num">1.0</span> .
+
+<span class="cm"># Oppure con il tag "latest" (più comune)</span>
+<span class="cmd">docker build</span> <span class="flag">-t</span> serverrest-calcolatrice .
+</code></pre>
+
+    <h3>Output atteso durante la build</h3>
+<pre><code>[+] Building 45.2s (14/14) FINISHED
+ => [internal] load build definition from Dockerfile
+ => [internal] load .dockerignore
+ => [builder 1/7] FROM eclipse-temurin:24-jdk-alpine
+ => [builder 2/7] RUN apk add --no-cache ant
+ => [builder 3/7] WORKDIR /app
+ => [builder 4/7] COPY src/ ./src/
+ => [builder 5/7] COPY lib/ ./lib/
+ ...
+ => [builder 7/7] RUN ant jar
+ => [stage-1 2/3] COPY --from=builder /app/dist/ServerRest.jar ...
+ => exporting to image
+ => naming to docker.io/library/serverrest-calcolatrice:1.0</code></pre>
+
+    <h3>Verificare le immagini presenti</h3>
+<pre><code><span class="cmd">docker images</span>
+
+<span class="cm"># Output:</span>
+<span class="cm"># REPOSITORY               TAG    IMAGE ID       SIZE</span>
+<span class="cm"># serverrest-calcolatrice  1.0    a1b2c3d4e5f6   ~200MB</span></code></pre>
+
+    <div class="callout ok">
+      <div class="callout-title">Build riuscita</div>
+      Se il comando termina senza errori, l'immagine è pronta. La build successiva sarà molto più rapida grazie alla cache dei layer Docker.
+    </div>
+  </section>
+
+  <!-- ────────────────── 7. RUN ────────────────── -->
+  <section id="run">
+    <h2><span class="num">7</span> Avvio del container</h2>
+
+    <div class="callout tip">
+      <div class="callout-title">Continuazione riga su Windows</div>
+      Su Windows il carattere per spezzare un comando su più righe è diverso dal terminale Unix (<code>\</code>):<br>
+      &bull; <strong>PowerShell</strong>: backtick <code>`</code> (il carattere sotto il tasto <kbd>Esc</kbd>)<br>
+      &bull; <strong>Prompt dei comandi (cmd)</strong>: <code>^</code><br>
+      In alternativa si può scrivere il comando tutto su una riga: Docker accetta entrambe le forme.
+    </div>
+
+    <h3>Avvio base (foreground)</h3>
+<pre><code><span class="cmd">docker run</span> <span class="flag">-p</span> <span class="num">8080</span>:<span class="num">8080</span> serverrest-calcolatrice
+</code></pre>
+
+    <h3>Avvio in background (detached)</h3>
+<pre><code><span class="cm"># PowerShell — continuazione con backtick `</span>
+<span class="cmd">docker run</span> <span class="flag">-d</span> `
+  <span class="flag">-p</span> <span class="num">8080</span>:<span class="num">8080</span> `
+  <span class="flag">--name</span> calcolatrice-server `
+  serverrest-calcolatrice
+
+<span class="cm"># Prompt dei comandi (cmd) — continuazione con ^</span>
+<span class="cmd">docker run</span> <span class="flag">-d</span> ^
+  <span class="flag">-p</span> <span class="num">8080</span>:<span class="num">8080</span> ^
+  <span class="flag">--name</span> calcolatrice-server ^
+  serverrest-calcolatrice
+
+<span class="cm"># Oppure su una riga sola (funziona in entrambi i terminali)</span>
+<span class="cmd">docker run -d -p 8080:8080 --name calcolatrice-server serverrest-calcolatrice</span>
+</code></pre>
+
+    <h3>Avvio su porta personalizzata (es. 9090)</h3>
+<pre><code><span class="cm"># PowerShell</span>
+<span class="cmd">docker run</span> <span class="flag">-d</span> `
+  <span class="flag">-p</span> <span class="num">9090</span>:<span class="num">9090</span> `
+  <span class="flag">--name</span> calcolatrice-server `
+  serverrest-calcolatrice <span class="num">9090</span>
+
+<span class="cm"># Su una riga sola (cmd e PowerShell)</span>
+<span class="cmd">docker run -d -p 9090:9090 --name calcolatrice-server serverrest-calcolatrice 9090</span>
+</code></pre>
+
+    <h3>Significato delle opzioni principali</h3>
+    <table>
+      <thead><tr><th>Opzione</th><th>Significato</th></tr></thead>
+      <tbody>
+        <tr><td><code>-d</code></td><td>Detached: il container gira in background</td></tr>
+        <tr><td><code>-p 8080:8080</code></td><td>Mappa la porta 8080 dell'host alla porta 8080 del container</td></tr>
+        <tr><td><code>--name calcolatrice-server</code></td><td>Assegna un nome al container (più comodo dei hash)</td></tr>
+        <tr><td><code>--rm</code></td><td>Elimina automaticamente il container quando si ferma</td></tr>
+        <tr><td><code>-e VARIABILE=valore</code></td><td>Imposta una variabile d'ambiente nel container</td></tr>
+        <tr><td><code>-v "C:\percorso\host":/container</code></td><td>Monta un volume (cartella condivisa host ↔ container). Su Windows i percorsi host usano il backslash e vanno racchiusi tra virgolette doppie.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Output del server all'avvio</h3>
+<pre><code>==============================================
+  Server REST con GSON avviato!
+==============================================
+Porta: 8080
+
+Endpoint disponibili:
+  - POST: http://localhost:8080/api/calcola/post
+  - GET:  http://localhost:8080/api/calcola/get
+  - Info: http://localhost:8080/
+
+Operatori supportati:
+  SOMMA, SOTTRAZIONE, MOLTIPLICAZIONE, DIVISIONE
+
+Premi Ctrl+C per fermare il server
+==============================================</code></pre>
+  </section>
+
+  <!-- ────────────────── 8. VERIFICA ────────────────── -->
+  <section id="verifica">
+    <h2><span class="num">8</span> Verifica del funzionamento</h2>
+
+    <h3>Dall'interfaccia grafica (Docker Desktop)</h3>
+    <ul>
+      <li><strong>Docker Desktop</strong>: aprire l'app &rarr; sezione <em>Containers</em> &rarr; cliccare sul container &rarr; tab <em>Logs</em></li>
+    </ul>
+
+    <h3>Dalla riga di comando</h3>
+
+    <div class="callout info">
+      <div class="callout-title">curl su Windows</div>
+      <code>curl.exe</code> è incluso in Windows 10 (build 17063+) e Windows 11. In <strong>PowerShell</strong>, il comando <code>curl</code> è un alias di <code>Invoke-WebRequest</code>: per usare il vero curl digitare <code>curl.exe</code>, oppure usare direttamente <code>Invoke-WebRequest</code> come mostrato di seguito. Nel <strong>Prompt dei comandi (cmd)</strong> il comando <code>curl</code> chiama sempre curl.exe.
+    </div>
+
+<pre><code><span class="cm"># Test endpoint info — funziona in cmd e PowerShell</span>
+<span class="cmd">curl.exe http://localhost:8080/</span>
+
+<span class="cm"># Test GET – somma di 15 + 7 — funziona in cmd e PowerShell</span>
+<span class="cmd">curl.exe "http://localhost:8080/api/calcola/get?operando1=15&amp;operando2=7&amp;operatore=SOMMA"</span>
+
+<span class="cm"># Test POST – moltiplicazione 6 × 9</span>
+<span class="cm"># Prompt dei comandi (cmd): JSON tra virgolette doppie, virgolette interne precedute da \</span>
+<span class="cmd">curl.exe -X POST http://localhost:8080/api/calcola/post -H "Content-Type: application/json" -d "{\"operando1\":6,\"operando2\":9,\"operatore\":\"MOLTIPLICAZIONE\"}"</span>
+
+<span class="cm"># PowerShell: alternativa con Invoke-WebRequest (virgolette singole per il body JSON)</span>
+<span class="cmd">Invoke-WebRequest -Method POST `
+  -Uri "http://localhost:8080/api/calcola/post" `
+  -ContentType "application/json" `
+  -Body '{"operando1":6,"operando2":9,"operatore":"MOLTIPLICAZIONE"}'</span></code></pre>
+
+    <h3>Risposta JSON attesa (POST)</h3>
+<pre><code>{
+  "risultato": 54.0,
+  "operazione": "6.0 MOLTIPLICAZIONE 9.0",
+  "errore": null
+}</code></pre>
+
+    <h3>Visualizzare i log del container</h3>
+<pre><code><span class="cm"># Log in tempo reale (seguire)</span>
+<span class="cmd">docker logs</span> <span class="flag">-f</span> calcolatrice-server
+
+<span class="cm"># Ultime 50 righe</span>
+<span class="cmd">docker logs</span> <span class="flag">--tail</span> <span class="num">50</span> calcolatrice-server</code></pre>
+  </section>
+
+  <!-- ────────────────── 9. IMPORTAZIONE IMMAGINE ────────────────── -->
+  <section id="importa">
+    <h2><span class="num">9</span> Importazione di una immagine <em style="font-size:.85em; font-weight:400; color:var(--muted)">(opzionale)</em></h2>
+
+    <p>Se si dispone di un'immagine Docker già compilata e distribuita come file <code>.tar</code> — ad esempio esportata da un server del docente o di un collega — è possibile importarla direttamente con <code>docker load</code>, <strong>saltando completamente le fasi di build</strong> (sezioni 4–6). È la soluzione ideale quando non si vuole ricompilare il progetto o quando si lavora in un ambiente senza accesso a Internet.</p>
+
+    <h3>Come viene creato il file .tar (lato server di origine)</h3>
+    <p>Sul computer Docker di origine l'immagine viene esportata con <code>docker save</code>. Questo passaggio non è necessario eseguirlo voi: è il comando che usa chi vi fornisce il file.</p>
+
+<pre><code><span class="cm"># Esporta l'immagine "serverrest-calcolatrice:1.0" in un file TAR</span>
+<span class="cmd">docker save</span> <span class="flag">-o</span> serverrest-calcolatrice.tar serverrest-calcolatrice:<span class="num">1.0</span>
+
+<span class="cm"># Oppure compressa in gzip (file più piccolo, stessa procedura di import)</span>
+<span class="cmd">docker save</span> serverrest-calcolatrice:<span class="num">1.0</span> <span class="flag">|</span> gzip > serverrest-calcolatrice.tar.gz
+</code></pre>
+
+    <h3>Importare l'immagine con docker load</h3>
+    <p>Copiare il file <code>.tar</code> ricevuto in una cartella accessibile (es. <code>C:\Users\nomeutente\Downloads\</code>), aprire <strong>PowerShell</strong> o il <strong>Prompt dei comandi</strong> e lanciare:</p>
+
+<pre><code><span class="cm"># Importa l'immagine dal file TAR — percorso completo</span>
+<span class="cmd">docker load</span> <span class="flag">-i</span> C:\Users\nomeutente\Downloads\serverrest-calcolatrice.tar
+
+<span class="cm"># Oppure navigando prima nella cartella che contiene il file</span>
+<span class="cmd">cd C:\Users\nomeutente\Downloads</span>
+<span class="cmd">docker load</span> <span class="flag">-i</span> serverrest-calcolatrice.tar
+</code></pre>
+
+    <h3>Output atteso durante l'importazione</h3>
+<pre><code>6e05db01b62d: Loading layer [==========================>]  182.4MB/182.4MB
+3a1b2c5e8f9d: Loading layer [==========================>]  4.096kB/4.096kB
+Loaded image: serverrest-calcolatrice:1.0</code></pre>
+
+    <div class="callout ok">
+      <div class="callout-title">Importazione completata</div>
+      L'ultima riga mostra il nome e il tag dell'immagine ripristinata. L'immagine è ora disponibile localmente e può essere avviata con <code>docker run</code> esattamente come se fosse stata costruita con <code>docker build</code>.
+    </div>
+
+    <h3>Verificare che l'immagine sia presente</h3>
+<pre><code><span class="cmd">docker images</span>
+
+<span class="cm"># Output atteso:</span>
+<span class="cm"># REPOSITORY               TAG    IMAGE ID       CREATED        SIZE</span>
+<span class="cm"># serverrest-calcolatrice  1.0    a1b2c3d4e5f6   2 hours ago    ~200MB</span>
+</code></pre>
+
+    <h3>Avviare il container dall'immagine importata</h3>
+    <p>Una volta verificata la presenza dell'immagine, procedere direttamente con il comando di avvio (sezione 7), senza eseguire alcuna build:</p>
+<pre><code><span class="cmd">docker run -d -p 8080:8080 --name calcolatrice-server serverrest-calcolatrice:1.0</span>
+</code></pre>
+
+    <div class="callout warn">
+      <div class="callout-title">Tag non riconosciuto dopo il load?</div>
+      Se <code>docker load</code> restituisce <code>Loaded image ID: sha256:...</code> senza mostrare un tag, l'immagine è stata salvata senza tag dal server di origine. Assegnare il tag manualmente:
+      <pre style="margin:8px 0 4px;font-size:.82rem"><code><span class="cm"># Sostituire sha256:xxxx con l'ID mostrato durante il load</span>
+<span class="cmd">docker tag sha256:a1b2c3d4e5f6 serverrest-calcolatrice:1.0</span></code></pre>
+    </div>
+  </section>
+
+  <!-- ────────────────── 10. COMPOSE ────────────────── -->
+  <section id="compose">
+    <h2><span class="num">10</span> Docker Compose (opzionale)</h2>
+
+    <p>Docker Compose semplifica l'avvio definendo la configurazione in un file YAML. Utile quando si vogliono aggiungere servizi aggiuntivi (database, proxy, ecc.).</p>
+
+    <p>Creare il file <code>compose.yaml</code> nella radice del progetto:</p>
+
+<pre><code><span class="label">compose.yaml</span><span class="kw">services</span>:
+  <span class="kw">calcolatrice</span>:
+    <span class="kw">build</span>: .
+    <span class="kw">image</span>: serverrest-calcolatrice:<span class="num">1.0</span>
+    <span class="kw">container_name</span>: calcolatrice-server
+    <span class="kw">ports</span>:
+      - <span class="str">"8080:8080"</span>
+    <span class="kw">restart</span>: unless-stopped
+    <span class="kw">healthcheck</span>:
+      <span class="kw">test</span>: [<span class="str">"CMD"</span>, <span class="str">"wget"</span>, <span class="str">"-qO-"</span>, <span class="str">"http://localhost:8080/"</span>]
+      <span class="kw">interval</span>: <span class="num">30s</span>
+      <span class="kw">timeout</span>: <span class="num">5s</span>
+      <span class="kw">retries</span>: <span class="num">3</span></code></pre>
+
+    <h3>Comandi Docker Compose</h3>
+<pre><code><span class="cm"># Avvia i servizi (build inclusa se necessario)</span>
+<span class="cmd">docker compose up</span> <span class="flag">-d</span>
+
+<span class="cm"># Ferma i servizi</span>
+<span class="cmd">docker compose down</span>
+
+<span class="cm"># Ricostruisce l'immagine e riavvia</span>
+<span class="cmd">docker compose up</span> <span class="flag">--build -d</span>
+
+<span class="cm"># Visualizza lo stato dei servizi</span>
+<span class="cmd">docker compose ps</span>
+
+<span class="cm"># Log di tutti i servizi</span>
+<span class="cmd">docker compose logs</span> <span class="flag">-f</span></code></pre>
+  </section>
+
+  <!-- ────────────────── 11. COMANDI ────────────────── -->
+  <section id="comandi">
+    <h2><span class="num">11</span> Comandi Docker essenziali</h2>
+
+    <h3>Gestione immagini</h3>
+<pre><code><span class="cm"># Elenco immagini</span>
+<span class="cmd">docker images</span>
+
+<span class="cm"># Elimina un'immagine</span>
+<span class="cmd">docker rmi</span> serverrest-calcolatrice:<span class="num">1.0</span>
+
+<span class="cm"># Elimina tutte le immagini non usate</span>
+<span class="cmd">docker image prune</span>
+
+<span class="cm"># Scarica un'immagine da Docker Hub</span>
+<span class="cmd">docker pull</span> eclipse-temurin:<span class="num">24-jre-alpine</span>
+</code></pre>
+
+    <h3>Gestione container</h3>
+<pre><code><span class="cm"># Elenco container in esecuzione</span>
+<span class="cmd">docker ps</span>
+
+<span class="cm"># Elenco di tutti i container (inclusi quelli fermi)</span>
+<span class="cmd">docker ps</span> <span class="flag">-a</span>
+
+<span class="cm"># Ferma un container</span>
+<span class="cmd">docker stop</span> calcolatrice-server
+
+<span class="cm"># Avvia un container esistente</span>
+<span class="cmd">docker start</span> calcolatrice-server
+
+<span class="cm"># Elimina un container (deve essere fermo)</span>
+<span class="cmd">docker rm</span> calcolatrice-server
+
+<span class="cm"># Ferma e rimuove in un colpo solo</span>
+<span class="cmd">docker rm</span> <span class="flag">-f</span> calcolatrice-server
+
+<span class="cm"># Apre una shell all'interno del container in esecuzione</span>
+<span class="cmd">docker exec</span> <span class="flag">-it</span> calcolatrice-server sh
+
+<span class="cm"># Ispeziona dettagli del container (JSON)</span>
+<span class="cmd">docker inspect</span> calcolatrice-server
+</code></pre>
+
+    <h3>Pulizia generale</h3>
+<pre><code><span class="cm"># Rimuove tutto ciò che non è in uso (immagini, container, network, cache)</span>
+<span class="cmd">docker system prune</span>
+
+<span class="cm"># Con conferma automatica (attenzione: elimina tutto!)</span>
+<span class="cmd">docker system prune</span> <span class="flag">-f</span></code></pre>
+  </section>
+
+  <!-- ────────────────── 12. TROUBLESHOOTING ────────────────── -->
+  <section id="troubleshooting">
+    <h2><span class="num">12</span> Risoluzione problemi comuni</h2>
+
+    <div class="callout warn">
+      <div class="callout-title">Problema: "port is already allocated"</div>
+      La porta 8080 è già usata da un altro processo o container.<br>
+      <strong>Soluzione 1:</strong> usare una porta diversa — <code>docker run -p 8081:8080 ...</code><br>
+      <strong>Soluzione 2:</strong> identificare e terminare il processo che occupa la porta. In PowerShell o cmd:
+      <pre style="margin:8px 0 4px;font-size:.82rem"><code><span class="cm"># Trova il PID del processo che usa la porta 8080</span>
+<span class="cmd">netstat -ano | findstr :8080</span>
+<span class="cm"># Termina il processo (sostituire 1234 con il PID trovato)</span>
+<span class="cmd">taskkill /PID 1234 /F</span></code></pre>
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-title">Problema: build fallisce su "ant jar"</div>
+      Ant non riesce a trovare la struttura del progetto NetBeans.<br>
+      <strong>Soluzione:</strong> verificare che il file <code>build.xml</code> e la cartella <code>nbproject/</code> siano nella radice del progetto e non siano esclusi dal <code>.dockerignore</code>.
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-title">Problema: "ClassNotFoundException: serverrest.App"</div>
+      Il JAR non include le classi o il classpath è errato.<br>
+      <strong>Soluzione:</strong> verificare che <code>manifest.mf</code> contenga <code>Main-Class: serverrest.App</code> e che il <code>ENTRYPOINT</code> nel Dockerfile includa <code>lib/gson-2.13.2.jar</code> nel classpath.
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-title">Problema: il container si avvia e si chiude subito</div>
+      L'applicazione è andata in crash all'avvio.<br>
+      <strong>Soluzione:</strong> <code>docker logs calcolatrice-server</code> per vedere il messaggio di errore.
+    </div>
+
+    <div class="callout ok">
+      <div class="callout-title">Comandi diagnostici utili</div>
+      <code>docker logs calcolatrice-server</code> &mdash; log completi<br>
+      <code>docker inspect calcolatrice-server</code> &mdash; configurazione e stato<br>
+      <code>docker exec -it calcolatrice-server sh</code> &mdash; shell nel container
+    </div>
+
+    <h3>Riepilogo del workflow completo</h3>
+    <ol class="steps">
+      <li>Assicurarsi che Docker Desktop sia in esecuzione (icona verde nella barra delle applicazioni)</li>
+      <li>Creare <code>Dockerfile</code> e <code>.dockerignore</code> nella radice del progetto</li>
+      <li>Eseguire <code>docker build -t serverrest-calcolatrice .</code></li>
+      <li>Eseguire <code>docker run -d -p 8080:8080 --name calcolatrice-server serverrest-calcolatrice</code></li>
+      <li>Testare con <code>curl http://localhost:8080/</code></li>
+      <li>Consultare i log con <code>docker logs -f calcolatrice-server</code> in caso di problemi</li>
+    </ol>
+  </section>
+
+  <footer>
+    <p>ServerRest-Calcolatrice &bull; TEPSIT Classe 5 &bull; Guida Docker &bull; 2026</p>
+  </footer>
+
+</main>
+</body>
+</html>
