@@ -1,0 +1,37 @@
+# ── Stage 1: Build ──────────────────────────────────────────
+FROM eclipse-temurin:24-jdk AS build
+
+# Installa Apache Ant
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ant \
+    && rm -rf /var/lib/apt/lists/*
+
+# Crea la directory di lavoro
+WORKDIR /workspace
+
+# Copia i file necessari per la build
+COPY build.xml manifest.mf ./
+COPY nbproject ./nbproject
+COPY src ./src
+COPY lib ./lib
+
+# Compila e crea il JAR tramite Ant
+RUN ant -noinput clean jar
+
+# ── Stage 2: Runtime ─────────────────────────────────────────
+FROM eclipse-temurin:24-jre
+
+WORKDIR /app
+
+# Porta predefinita (sovrascrivibile a runtime)
+ENV PORT=8080
+
+# Copia il JAR prodotto e la libreria GSON
+COPY --from=build /workspace/dist/ServerRest.jar ./ServerRest.jar
+COPY --from=build /workspace/lib ./lib
+
+# Espone la porta del server REST
+EXPOSE 8080
+
+# Avvia il server usando la variabile PORT (es. docker run -e PORT=9090 ...)
+ENTRYPOINT ["sh", "-c", "exec java -cp /app/ServerRest.jar:/app/lib/* serverrest.App \"${PORT}\""]

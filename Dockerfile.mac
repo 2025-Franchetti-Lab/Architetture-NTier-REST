@@ -1,0 +1,35 @@
+# ── Stage 1: Build ──────────────────────────────────────────
+FROM eclipse-temurin:24-jdk-alpine AS builder
+
+# Installa Apache Ant
+RUN apk add --no-cache ant
+
+# Crea la directory di lavoro
+WORKDIR /app
+
+# Copia i file necessari per la build
+COPY src/        ./src/
+COPY lib/        ./lib/
+COPY build.xml   ./
+COPY manifest.mf ./
+COPY nbproject/  ./nbproject/
+
+# Compila e crea il JAR tramite Ant
+RUN ant jar
+
+# ── Stage 2: Runtime ─────────────────────────────────────────
+FROM eclipse-temurin:24-jre-alpine
+
+WORKDIR /app
+
+# Copia solo il JAR prodotto e la libreria GSON
+COPY --from=builder /app/dist/ServerRest.jar ./ServerRest.jar
+COPY --from=builder /app/lib/              ./lib/
+
+# Espone la porta del server REST
+EXPOSE 8080
+
+# Avvia il server; il numero di porta può essere sovrascritto
+# passando un argomento al container: docker run ... serverrest 9090
+ENTRYPOINT ["java", "-cp", "ServerRest.jar:lib/gson-2.13.2.jar", "serverrest.App"]
+CMD ["8080"]
